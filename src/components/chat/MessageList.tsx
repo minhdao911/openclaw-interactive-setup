@@ -1,20 +1,24 @@
-'use client'
+"use client";
 
-import { useEffect, useRef } from 'react'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { MessageBubble } from './MessageBubble'
-import { ProgressConfirmation } from './ProgressConfirmation'
-import type { Message } from 'ai'
-import type { PendingConfirmation } from '@/hooks/useClawChat'
+import type { PendingConfirmation } from "@/hooks/useClawChat";
+import type { Message } from "ai";
+import { useEffect, useRef } from "react";
+import { MessageBubble } from "./MessageBubble";
+import { ProgressConfirmation } from "./ProgressConfirmation";
 
 interface Props {
-  messages: Message[]
-  isLoading: boolean
-  pendingConfirmations: PendingConfirmation[]
-  onConfirm: (confirmation: PendingConfirmation, confirmed: boolean) => void
+  messages: Message[];
+  isLoading: boolean;
+  pendingConfirmations: PendingConfirmation[];
+  onConfirm: (confirmation: PendingConfirmation, confirmed: boolean) => void;
+  onSuggestion: (text: string) => void;
 }
 
-function WelcomeMessage() {
+function WelcomeMessage({
+  onSuggestion,
+}: {
+  onSuggestion: (text: string) => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-8 gap-4">
       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
@@ -37,6 +41,7 @@ function WelcomeMessage() {
         ].map((suggestion) => (
           <button
             key={suggestion}
+            onClick={() => onSuggestion(suggestion)}
             className="text-xs border border-border rounded-full px-3 py-1.5 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
           >
             {suggestion}
@@ -44,29 +49,38 @@ function WelcomeMessage() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export function MessageList({ messages, isLoading, pendingConfirmations, onConfirm }: Props) {
-  const bottomRef = useRef<HTMLDivElement>(null)
+export function MessageList({
+  messages,
+  isLoading,
+  pendingConfirmations,
+  onConfirm,
+  onSuggestion,
+}: Props) {
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, pendingConfirmations])
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, pendingConfirmations]);
 
   return (
     <div className="flex-1 overflow-y-auto">
       {messages.length === 0 ? (
-        <WelcomeMessage />
+        <WelcomeMessage onSuggestion={onSuggestion} />
       ) : (
-        <div className="px-4 py-4 space-y-4">
+        <div className="px-4 py-4 space-y-8">
           {messages.map((message) => {
             const confirmationsForMessage = pendingConfirmations.filter(
-              (c) => c.messageId === message.id
-            )
+              (c) => c.messageId === message.id,
+            );
             return (
               <div key={message.id}>
-                <MessageBubble role={message.role as 'user' | 'assistant'} content={message.content} />
+                <MessageBubble
+                  role={message.role as "user" | "assistant"}
+                  content={message.content}
+                />
                 {confirmationsForMessage.map((conf) => (
                   <ProgressConfirmation
                     key={`${conf.messageId}-${conf.sectionId}`}
@@ -75,19 +89,15 @@ export function MessageList({ messages, isLoading, pendingConfirmations, onConfi
                   />
                 ))}
               </div>
-            )
+            );
           })}
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0 mt-1 mr-2">
-                C
-              </div>
-              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
-                <div className="flex gap-1 items-center h-4">
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
-                </div>
+            <div className="flex justify-start gap-4">
+              <div className="w-7 h-7 shrink-0" />
+              <div className="flex gap-1 items-center h-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           )}
@@ -95,5 +105,5 @@ export function MessageList({ messages, isLoading, pendingConfirmations, onConfi
         </div>
       )}
     </div>
-  )
+  );
 }

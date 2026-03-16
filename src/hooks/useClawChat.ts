@@ -112,6 +112,15 @@ export function useClawChat() {
     [input, isLoading, handleSubmit]
   )
 
+  const sendSuggestion = useCallback(
+    async (text: string) => {
+      if (isLoading) return
+      await addMessage('user', text)
+      append({ role: 'user', content: text })
+    },
+    [isLoading, append]
+  )
+
   const confirmProgress = useCallback(
     async (confirmation: PendingConfirmation, confirmed: boolean) => {
       if (confirmed) {
@@ -132,6 +141,7 @@ export function useClawChat() {
     input,
     handleInputChange,
     submitMessage,
+    sendSuggestion,
     isLoading,
     loaded,
     pendingConfirmations,

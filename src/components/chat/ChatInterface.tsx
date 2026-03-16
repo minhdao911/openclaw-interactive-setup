@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useClawChat } from '@/hooks/useClawChat'
-import { MessageList } from './MessageList'
-import { MessageInput } from './MessageInput'
-import { ProgressSidebar } from '@/components/sidebar/ProgressSidebar'
+import { ProgressSidebar } from "@/components/sidebar/ProgressSidebar";
+import { useClawChat } from "@/hooks/useClawChat";
+import { MessageInput } from "./MessageInput";
+import { MessageList } from "./MessageList";
 
 export function ChatInterface() {
   const {
@@ -11,14 +11,18 @@ export function ChatInterface() {
     input,
     handleInputChange,
     submitMessage,
+    sendSuggestion,
     isLoading,
     loaded,
     pendingConfirmations,
     confirmProgress,
-  } = useClawChat()
+  } = useClawChat();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      {/* Progress sidebar */}
+      <ProgressSidebar />
+
       {/* Chat area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
@@ -39,6 +43,7 @@ export function ChatInterface() {
             isLoading={isLoading}
             pendingConfirmations={pendingConfirmations}
             onConfirm={confirmProgress}
+            onSuggestion={sendSuggestion}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center">
@@ -54,9 +59,6 @@ export function ChatInterface() {
           isLoading={isLoading}
         />
       </div>
-
-      {/* Progress sidebar */}
-      <ProgressSidebar />
     </div>
-  )
+  );
 }
