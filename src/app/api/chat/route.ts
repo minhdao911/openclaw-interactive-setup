@@ -11,18 +11,16 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model,
-    messages,
-    providerOptions: {
-      anthropic: {
-        system: [
-          {
-            type: 'text',
-            text: systemText,
-            cacheControl: { type: 'ephemeral' },
-          },
-        ],
+    messages: [
+      {
+        role: 'system',
+        content: systemText,
+        experimental_providerMetadata: {
+          anthropic: { cacheControl: { type: 'ephemeral' } },
+        },
       },
-    },
+      ...messages,
+    ],
     maxTokens: 2048,
   })
 
