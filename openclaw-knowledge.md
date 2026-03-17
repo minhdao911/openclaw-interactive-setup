@@ -42,8 +42,8 @@ OpenClaw is a **self-hosted gateway** that connects your favorite chat apps (Wha
 
 **Key capabilities:**
 
-- Multi-channel gateway: WhatsApp, Telegram, Discord, iMessage, Slack with a single Gateway process
-- Plugin channels: Mattermost and more via extension packages
+- Multi-channel gateway: WhatsApp, Telegram, Discord, iMessage, Slack, Signal, IRC, Google Chat, LINE with a single Gateway process
+- Plugin channels: Feishu/Lark, Nostr, Microsoft Teams, Mattermost, Nextcloud Talk, Matrix, BlueBubbles, Zalo, Zalo Personal, Synology Chat, Tlon via extension packages
 - Multi-agent routing: isolated sessions per agent, workspace, or sender
 - Media support: send and receive images, audio, and documents
 - Web Control UI: browser dashboard for chat, config, sessions, and nodes
@@ -378,11 +378,11 @@ Re-running the wizard is safe — it detects existing config and lets you choose
 
 ---
 
-### Two Paths: Quickstart vs Advanced
+### Two Paths: Quickstart vs Manual (Advanced)
 
-At the start of the wizard (after the risk acknowledgment), you choose your flow:
+At the start of the wizard (after the risk acknowledgment), you choose your onboarding mode. The actual wizard label is **"Manual"** (was documented as "Advanced" — same flow, renamed):
 
-|                    | Quickstart                               | Advanced                                  |
+|                    | Quickstart                               | Manual (Advanced)                         |
 | ------------------ | ---------------------------------------- | ----------------------------------------- |
 | **Port**           | Default (18789)                          | You choose                                |
 | **Bind address**   | Loopback only                            | You choose                                |
@@ -399,7 +399,9 @@ At the start of the wizard (after the risk acknowledgment), you choose your flow
 
 ---
 
-### Step-by-Step: Advanced (Manual) Flow
+### Step-by-Step: Manual Flow
+
+> ⚠️ **Actual step order from live wizard run** — differs from earlier documentation. Workspace and model provider steps come *before* gateway network settings.
 
 #### Step 0 — Risk Acknowledgment
 
@@ -407,13 +409,27 @@ Before anything else, the wizard surfaces a security acknowledgment you must con
 
 > _"I understand this is personal-by-default and shared/multi-user use requires lock-down."_
 
-Key warnings it covers:
+Key warnings it covers (actual wizard text):
 
-- OpenClaw is in beta — expect sharp edges
-- Trust model is personal-by-default (not hardened for multi-user by default)
-- Tools can execute real actions — understand what you're enabling
-- Shared/multi-user deployments require additional security hardening
-- Baseline recommendations: use pairing/allowlists, sandbox where possible, apply least-privilege
+- "OpenClaw is a hobby project and still in beta. Expect sharp edges."
+- "By default, OpenClaw is a personal agent: one trusted operator boundary."
+- "This bot can read files and run actions if tools are enabled. A bad prompt can trick it into doing unsafe things."
+- "OpenClaw is not a hostile multi-tenant boundary by default. If multiple users can message one tool-enabled agent, they share that delegated tool authority."
+- "If you're not comfortable with security hardening and access control, don't run OpenClaw."
+
+Recommended baseline (shown in wizard):
+- Pairing/allowlists + mention gating
+- Multi-user/shared inbox: split trust boundaries (separate gateway/credentials, ideally separate OS users/hosts)
+- Sandbox + least-privilege tools
+- Shared inboxes: isolate DM sessions (`session.dmScope: per-channel-peer`) and keep tool access minimal
+- Keep secrets out of the agent's reachable filesystem
+- Use the strongest available model for any bot with tools or untrusted inboxes
+
+Commands surfaced here:
+```bash
+openclaw security audit --deep
+openclaw security audit --fix    # ⚠️ new — not in earlier docs
+```
 
 You cannot proceed without confirming this.
 
@@ -446,75 +462,19 @@ For most setups, choose **Local**.
 
 ---
 
-#### Step 3 — Gateway: Port
+#### Step 3 — Workspace Directory
 
-Set the port the gateway listens on.
-
-- **Default:** `18789`
-- Must be a valid port number
-- Quickstart always uses the default; advanced lets you change it
-- If you change it, update all channel configs and clients accordingly
-
----
-
-#### Step 4 — Gateway: Bind Address
-
-Controls which network interfaces the gateway accepts connections from. This is one of the most important security decisions.
-
-| Option       | Binds to                | Use case                                                               |
-| ------------ | ----------------------- | ---------------------------------------------------------------------- |
-| **Loopback** | `127.0.0.1`             | Local machine only — most secure, recommended default                  |
-| **LAN**      | `0.0.0.0`               | All network interfaces — accessible from your local network            |
-| **Tailnet**  | Tailscale IP            | Remote access via Tailscale mesh — secure without exposing to internet |
-| **Auto**     | Loopback → LAN fallback | Tries loopback, falls back to LAN automatically                        |
-| **Custom**   | User-specified IPv4     | Bind to a specific IP address                                          |
-
-> ⚠️ **Security note:** Never bind to `0.0.0.0` on a public VPS without a firewall or tunnel. Use Loopback + SSH tunnel or Tailnet for remote access.
-
-> ⚠️ **Tailscale constraint:** Selecting Tailnet forces `bind=loopback` internally — Tailscale handles the network exposure layer.
-
----
-
-#### Step 5 — Gateway: Authentication Mode
-
-Controls how clients authenticate to the gateway.
-
-| Option                | How it works                     | Notes                                     |
-| --------------------- | -------------------------------- | ----------------------------------------- |
-| **Token** _(default)_ | Auto-generated bearer token      | Recommended for both local and remote use |
-| **Password**          | User-defined password credential | Required if using Tailscale Funnel mode   |
-
-For token mode, the wizard can either auto-generate a token or let you provide your own.
-
----
-
-#### Step 6 — Gateway: Tailscale Exposure
-
-Only relevant if you have Tailscale installed and want remote access without SSH tunnels.
-
-| Option              | What it does                                                               |
-| ------------------- | -------------------------------------------------------------------------- |
-| **Off** _(default)_ | No Tailscale — gateway only accessible via local bind address              |
-| **Serve**           | Exposes gateway to your Tailnet (private mesh only)                        |
-| **Funnel**          | Exposes gateway publicly via Tailscale Funnel — **requires password auth** |
-
-If the Tailscale binary isn't detected on the system, the wizard will warn you.
-
-The wizard also asks whether to **reset Tailscale config on exit** — useful during testing so you don't leave stale Tailscale configurations behind.
-
----
-
-#### Step 7 — Workspace Directory
+> ⚠️ **Actual order:** Workspace comes *before* gateway network settings in the live wizard (not after as earlier docs suggested).
 
 Sets the directory where OpenClaw stores agent files (SOUL.md, MEMORY.md, skills, etc.).
 
 - **Default:** `~/.openclaw/workspace`
 - Can be any path you have write access to
-- Quickstart always uses the default; advanced lets you customise
+- Quickstart always uses the default; Manual lets you customise
 
 ---
 
-#### Step 8 — API Key / Model Provider
+#### Step 4 — API Key / Model Provider
 
 Select your model provider and enter your API credentials.
 
@@ -545,23 +505,86 @@ If a SecretRef can't be resolved at startup, OpenClaw throws a descriptive error
 
 ---
 
-#### Step 9 — Model Selection
+#### Step 5 — Model Selection
 
 After configuring the provider, choose the default model.
 
 - The wizard lists available models for the selected provider
 - This becomes the default model for all agents unless overridden per-agent
 - Can be changed later via `openclaw config` or editing `openclaw.json`
+- Option to "Keep current" if already configured
+
+---
+
+#### Step 6 — Gateway: Port
+
+Set the port the gateway listens on.
+
+- **Default:** `18789`
+- Must be a valid port number
+- Quickstart always uses the default; Manual lets you change it
+- If you change it, update all channel configs and clients accordingly
+
+---
+
+#### Step 7 — Gateway: Bind Address
+
+Controls which network interfaces the gateway accepts connections from.
+
+| Option       | Binds to                | When to use                                                                                                                                          |
+| ------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Loopback** | `127.0.0.1`             | Gateway only reachable from the same machine. Works well when you access the dashboard via SSH tunnel, or when everything runs on one local box.     |
+| **LAN**      | `0.0.0.0`               | Gateway listens on all interfaces. Required for VPS or any setup where the dashboard or API needs to be reachable from another machine on the network. |
+| **Tailnet**  | Tailscale IP            | Exposes the gateway only on your private Tailscale mesh. Good if you use Tailscale to connect between machines without opening anything to the internet. |
+| **Auto**     | Loopback → LAN fallback | Tries loopback first; falls back to LAN if that fails. Low-friction option if you're unsure.                                                         |
+| **Custom**   | User-specified IPv4     | Bind to a specific IP on a multi-homed machine.                                                                                                      |
+
+> ⚠️ **Tailscale constraint:** Selecting Tailnet forces `bind=loopback` internally — Tailscale handles the network exposure layer.
+
+> ⚠️ **SECURITY ERROR with LAN bind:** After the wizard completes, if you chose LAN and open the web Control UI, you'll see: `"SECURITY ERROR: Gateway URL 'ws://192.168.64.2:18789' uses plaintext ws:// to a non-loopback address."` and the Control UI shows "Gateway: not detected". The gateway itself still runs fine — this is the web UI refusing to connect over unencrypted `ws://` to a non-loopback host. To use the dashboard in this case: open it from the same machine via `localhost`, or put TLS in front of the gateway.
+
+---
+
+#### Step 8 — Gateway: Authentication Mode
+
+Controls how clients authenticate to the gateway.
+
+| Option                | How it works                     | Notes                                     |
+| --------------------- | -------------------------------- | ----------------------------------------- |
+| **Token** _(default)_ | Auto-generated bearer token      | Recommended for both local and remote use |
+| **Password**          | User-defined password credential | Required if using Tailscale Funnel mode   |
+
+For token mode, the wizard can either auto-generate a token or let you provide your own.
+
+---
+
+#### Step 9 — Gateway: Tailscale Exposure
+
+Only relevant if you have Tailscale installed and want remote access without SSH tunnels.
+
+| Option              | What it does                                                               |
+| ------------------- | -------------------------------------------------------------------------- |
+| **Off** _(default)_ | No Tailscale — gateway only accessible via local bind address              |
+| **Serve**           | Exposes gateway to your Tailnet (private mesh only)                        |
+| **Funnel**          | Exposes gateway publicly via Tailscale Funnel — **requires password auth** |
+
+If the Tailscale binary isn't detected on the system, the wizard will warn you.
+
+The wizard also asks whether to **reset Tailscale config on exit** — useful during testing so you don't leave stale Tailscale configurations behind.
 
 ---
 
 #### Step 10 — Channel Setup
 
-Add one or more communication channels (Telegram, WhatsApp, Discord, Slack, iMessage, Web UI, etc.).
+The wizard shows a **channel status panel** listing all channels and their current state before asking if you want to configure them now. The panel distinguishes:
+- Built-in channels: Telegram, WhatsApp, Discord, Slack, Signal, iMessage, IRC, Google Chat, LINE
+- Plugin channels (require separate install): Feishu/Lark, Nostr, Microsoft Teams, Mattermost, Nextcloud Talk, Matrix, BlueBubbles, Zalo, Zalo Personal, Synology Chat, Tlon
 
-- You can add multiple channels in this step or skip and add later
-- Each channel walks through its own auth flow (bot tokens, QR pairing, OAuth, etc.)
-- Quickstart defaults: Telegram and WhatsApp allowlists enabled by default
+Then a **"How channels work"** info panel is shown before letting you select a channel to configure. You can configure multiple channels in sequence, then select "Finished".
+
+Each channel has its own auth flow and DM policy configuration. After channel selection, the wizard asks:
+1. Whether to configure DM access policies now (default: pairing)
+2. The DM policy for that channel (Pairing recommended)
 
 ---
 
@@ -576,19 +599,42 @@ The wizard checks for configured search providers (Brave Search, etc.) and their
 Install recommended skills from ClawHub for your use case.
 
 - Quickstart installs a curated "coding tool profile" by default
-- Advanced lets you pick skills manually
+- Manual lets you pick skills manually
+- The wizard reports: Eligible, Missing requirements, Unsupported on this OS, Blocked by allowlist
 - Skills can also be installed/removed later via `openclaw skills`
 
 ---
 
-#### Step 13 — Daemon / Service Installation
+#### Step 13 — Hooks (NEW)
 
-Installs OpenClaw as a persistent background service so it starts automatically.
+> ⚠️ Not in earlier documentation — confirmed in live wizard run.
 
-| Platform | Service type         |
-| -------- | -------------------- |
-| macOS    | LaunchAgent          |
-| Linux    | systemd user service |
+The wizard asks if you want to enable hooks.
+
+**What hooks are:** Shell commands that run automatically when agent commands are issued.
+
+**Example use case:** Save session context to memory when you issue `/new` or `/reset`.
+
+**Docs:** https://docs.openclaw.ai/automation/hooks
+
+Option: "Skip for now" is available.
+
+---
+
+#### Step 14 — Gateway Service Runtime + Daemon Installation
+
+First selects the runtime:
+- **Node** (recommended)
+- Other options may be available
+
+Then installs OpenClaw as a persistent background service so it starts automatically.
+
+| Platform | Service type         | Path                                                              |
+| -------- | -------------------- | ----------------------------------------------------------------- |
+| macOS    | LaunchAgent          | `~/Library/LaunchAgents/ai.openclaw.gateway.plist`                |
+| Linux    | systemd user service | systemd user service                                              |
+
+Logs: `~/.openclaw/logs/gateway.log`
 
 The wizard asks whether to install the daemon (Quickstart defaults to yes).
 
@@ -602,32 +648,73 @@ If a daemon is already installed, you're offered:
 
 ---
 
-#### Step 14 — Health Check
+#### Step 15 — Health Check
 
-The wizard runs a 15-second connectivity check to verify the gateway is reachable and responding. If it fails, it shows diagnostics to help you identify the issue.
+The wizard verifies the gateway is reachable and channel connections are working. It shows per-channel status, e.g. "Discord: ok (@Ken) (1059ms)".
 
----
-
-#### Step 15 — Bot Hatching (First Launch)
-
-Choose how to start interacting with your agent:
-
-| Option                       | What happens                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| **TUI mode** _(recommended)_ | Opens the terminal UI and sends `"Wake up, my friend!"` to bootstrap the agent |
-| **Web UI**                   | Opens the browser dashboard (`openclaw dashboard`) with an embedded auth token |
-| **Later**                    | Defers — you can open the dashboard manually with `openclaw dashboard`         |
+Also shows:
+- Agents configured (e.g. "Agents: main (default)")
+- **Heartbeat interval** — default observed in live run: **30m (main)** (not 55m as in cost optimization docs — that 55m is a recommended override for cache warming, not the out-of-box default)
+- Session store path + entry count
 
 ---
 
-#### Step 16 — Shell Completion
+#### Step 16 — Optional Apps (NEW)
+
+> ⚠️ Not in earlier documentation — confirmed in live wizard run.
+
+The wizard presents optional node apps for additional capabilities:
+
+- **macOS app** — system integration + notifications
+- **iOS app** — camera/canvas workflows
+- **Android app** — camera/canvas workflows
+
+---
+
+#### Step 17 — Control UI Panel
+
+Displays the web UI URL and token. If bound to a non-loopback address, also shows the security warning about plaintext `ws://`.
+
+---
+
+#### Step 18 — Workspace Backup (NEW)
+
+> ⚠️ Not in earlier documentation — confirmed in live wizard run.
+
+The wizard prompts to back up your agent workspace.
+
+**Docs:** https://docs.openclaw.ai/concepts/agent-workspace
+
+---
+
+#### Step 19 — Security Reminder
+
+A final security reminder panel pointing to https://docs.openclaw.ai/security.
+
+---
+
+#### Step 20 — Shell Completion
 
 Installs tab-completion for the `openclaw` CLI in your shell (bash/zsh).
 
 - Quickstart: auto-installs without prompting
-- Advanced: prompts for confirmation
+- Manual: prompts for confirmation
 - If already installed, this step is skipped
 - If installation fails, it suggests running `openclaw completion --install` manually
+
+---
+
+#### Step 21 — Dashboard Ready
+
+Final panel showing the full dashboard URL with auth token, and SSH tunnel command if no GUI is detected.
+
+---
+
+#### Step 22 — What Now (NEW)
+
+> ⚠️ Not in earlier documentation — confirmed in live wizard run.
+
+Final step directs you to: https://openclaw.ai/showcase ("What People Are Building").
 
 ---
 
@@ -1182,9 +1269,75 @@ Opens an interactive terminal UI. The wizard uses TUI mode at the end of onboard
 
 ---
 
-### Lark
+### Signal
 
-> Plugin channel — install separately. See https://docs.openclaw.ai/channels for details.
+> Requires `signal-cli` installed and linked device. More setup involved.
+
+### IRC
+
+Classic IRC networks with DM/channel routing and pairing controls.
+
+### Google Chat
+
+Google Workspace Chat app via HTTP webhook.
+
+### LINE
+
+LINE Messaging API webhook bot.
+
+### Feishu / Lark
+
+> Plugin channel — install separately.
+
+飞书/Lark enterprise messaging with doc/wiki/drive tools.
+
+### Nostr
+
+> Plugin channel — install separately.
+
+Decentralized protocol; encrypted DMs via NIP-04.
+
+### Microsoft Teams
+
+> Plugin channel — install separately.
+
+Bot Framework; enterprise support.
+
+### Mattermost
+
+> Plugin channel — install separately.
+
+Self-hosted Slack-style chat.
+
+### Nextcloud Talk
+
+> Plugin channel — install separately.
+
+Self-hosted chat via Nextcloud Talk webhook bots.
+
+### Matrix
+
+> Plugin channel — install separately.
+
+Open protocol.
+
+### Zalo / Zalo Personal
+
+> Plugin channel — install separately.
+
+Vietnam-focused messaging platform. Zalo Personal uses QR code login.
+
+### Synology Chat
+
+> Plugin channel — install separately.
+
+Connect your Synology NAS Chat to OpenClaw.
+
+### Tlon
+
+> Plugin channel — install separately.
+
+Decentralized messaging on Urbit.
 
 ---
 
@@ -1200,6 +1353,7 @@ OpenClaw is **personal-by-default** — designed for a single user or small trus
 
 ```bash
 openclaw security audit --deep
+openclaw security audit --fix
 ```
 
 ### Hardening Checklist
@@ -1875,6 +2029,7 @@ openclaw models scan [--no-probe] [--min-params 7]  # scan OpenRouter free tier
 | `openclaw skills`                  | Manage skills                               |
 | `openclaw security audit`          | Run security audit                          |
 | `openclaw security audit --deep`   | Deep security audit                         |
+| `openclaw security audit --fix`    | Deep audit + apply fixes automatically      |
 | `openclaw reset`                   | Reset config/credentials                    |
 | `openclaw uninstall`               | Remove OpenClaw                             |
 | `openclaw update`                  | Update to latest version                    |
