@@ -1,7 +1,10 @@
 import type { ParsedProgressUpdate } from '@/types'
 
+// Matches both formats:
+//   <progress-update section="X" status="Y" />
+//   <progress-update section="X" status="Y" detail="Z" />
 const PROGRESS_TAG_REGEX =
-  /<progress-update\s+section="([^"]+)"\s+status="([^"]+)"\s*\/>/g
+  /<progress-update\s+section="([^"]+)"\s+status="([^"]+)"(?:\s+detail="([^"]*)")?\s*\/>/g
 
 const VALID_SECTION_IDS = new Set([
   'installation',
@@ -23,12 +26,16 @@ export function parseProgressUpdates(content: string): {
 } {
   const updates: ParsedProgressUpdate[] = []
 
-  const cleanContent = content.replace(PROGRESS_TAG_REGEX, (_, sectionId, status) => {
+  const cleanContent = content.replace(PROGRESS_TAG_REGEX, (_, sectionId, status, detail) => {
     if (
       VALID_SECTION_IDS.has(sectionId) &&
       (status === 'in_progress' || status === 'done')
     ) {
-      updates.push({ sectionId, status })
+      const update: ParsedProgressUpdate = { sectionId, status }
+      if (detail) {
+        update.detail = detail
+      }
+      updates.push(update)
     }
     return ''
   })

@@ -1,23 +1,26 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { PROGRESS_SECTIONS } from '@/lib/progress-sections'
-import type { PendingConfirmation } from '@/hooks/useClawChat'
+import { Button } from "@/components/ui/button";
+import type { PendingConfirmation } from "@/hooks/useClawChat";
+import { PROGRESS_SECTIONS } from "@/lib/progress-sections";
 
 interface Props {
-  confirmation: PendingConfirmation
-  onConfirm: (confirmation: PendingConfirmation, confirmed: boolean) => void
+  confirmation: PendingConfirmation;
+  onConfirm: (confirmation: PendingConfirmation, confirmed: boolean) => void;
 }
 
 export function ProgressConfirmation({ confirmation, onConfirm }: Props) {
-  const section = PROGRESS_SECTIONS.find((s) => s.id === confirmation.sectionId)
-  const label = section?.label ?? confirmation.sectionId
+  const section = PROGRESS_SECTIONS.find(
+    (s) => s.id === confirmation.sectionId,
+  );
+  const label = section?.label ?? confirmation.sectionId;
 
   return (
-    <div className="flex justify-start pl-9 mt-1">
-      <div className="bg-background border border-border rounded-xl px-4 py-3 text-sm max-w-[80%]">
+    <div className="flex justify-start pl-11 mt-4">
+      <div className="bg-background border border-border rounded-xl p-4 text-sm max-w-[80%]">
         <p className="text-muted-foreground mb-2">
-          Did you complete <span className="font-medium text-foreground">{label}</span>?
+          Did you complete{" "}
+          <span className="font-medium text-foreground">{label}</span>?
         </p>
         <div className="flex gap-2">
           <Button
@@ -39,5 +42,5 @@ export function ProgressConfirmation({ confirmation, onConfirm }: Props) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getConversation, getMessages, addMessage, replaceWithCompaction } from '@/lib/db/queries'
+import { getConversation, getMessages, addMessage, replaceWithCompaction, clearAll } from '@/lib/db/queries'
 import { parseProgressUpdates } from '@/lib/progress-detect'
 import { shouldCompact, runCompaction } from '@/lib/compact'
 import { updateProgress } from '@/lib/db/queries'
@@ -13,6 +13,7 @@ export interface PendingConfirmation {
   sectionId: string
   sectionLabel: string
   status: 'done'
+  detail?: string
 }
 
 export function useClawChat() {
@@ -29,7 +30,7 @@ export function useClawChat() {
         const { updates, cleanContent } = parseProgressUpdates(message.content)
 
         // Save clean content (tags stripped) to Dexie
-        const saved = await addMessage('assistant', cleanContent)
+        await addMessage('assistant', cleanContent)
 
         // Update message in useChat state to use clean content
         setMessages((prev) =>
@@ -39,18 +40,19 @@ export function useClawChat() {
         )
 
         // Queue confirmations for "done" updates; auto-apply "in_progress"
+        // Use message.id (useChat streaming ID) so confirmations match in MessageList
         for (const update of updates) {
           if (update.status === 'in_progress') {
-            await updateProgress(update.sectionId, 'in_progress')
+            await updateProgress(update.sectionId, 'in_progress', update.detail)
           } else if (update.status === 'done') {
-            const sectionLabel = update.sectionId // will be resolved in component
             setPendingConfirmations((prev) => [
               ...prev,
               {
-                messageId: saved.id,
+                messageId: message.id,
                 sectionId: update.sectionId,
                 sectionLabel: update.sectionId,
                 status: 'done',
+                detail: update.detail,
               },
             ])
           }
@@ -121,10 +123,17 @@ export function useClawChat() {
     [isLoading, append]
   )
 
+  const resetAll = useCallback(async () => {
+    await clearAll()
+    setMessages([])
+    setConversationSummary(null)
+    setPendingConfirmations([])
+  }, [setMessages])
+
   const confirmProgress = useCallback(
     async (confirmation: PendingConfirmation, confirmed: boolean) => {
       if (confirmed) {
-        await updateProgress(confirmation.sectionId, 'done')
+        await updateProgress(confirmation.sectionId, 'done', confirmation.detail)
       }
       setPendingConfirmations((prev) =>
         prev.filter(
@@ -146,5 +155,6 @@ export function useClawChat() {
     loaded,
     pendingConfirmations,
     confirmProgress,
+    resetAll,
   }
 }

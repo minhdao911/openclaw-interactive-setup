@@ -37,4 +37,5 @@ export interface UseCaseCard {
 export interface ParsedProgressUpdate {
   sectionId: string
   status: 'in_progress' | 'done'
+  detail?: string
 }

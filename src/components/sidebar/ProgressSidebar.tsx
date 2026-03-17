@@ -3,6 +3,7 @@
 import { useProgress } from "@/hooks/useProgress";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus } from "@/types";
+import { CheckCircle } from "lucide-react";
 
 function StatusIcon({
   status,
@@ -93,9 +94,12 @@ export function ProgressSidebar() {
                   {section.description}
                 </p>
                 {section.notes && (
-                  <p className="text-xs text-primary mt-1 italic">
-                    {section.notes}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <CheckCircle className="w-3 h-3" />
+                    <p className="text-xs text-primary font-medium">
+                      {section.notes}
+                    </p>
+                  </div>
                 )}
 
                 {/* Use case cards for first-usecase section */}

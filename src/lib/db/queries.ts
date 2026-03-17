@@ -75,6 +75,14 @@ export async function getProgress(): Promise<DbProgress[]> {
   return existing
 }
 
+export async function clearAll(): Promise<void> {
+  await db.transaction('rw', db.messages, db.conversation, db.progress, async () => {
+    await db.messages.clear()
+    await db.progress.clear()
+    await db.conversation.put({ id: CONVERSATION_ID, summary: null, updatedAt: Date.now() })
+  })
+}
+
 export async function updateProgress(
   sectionId: string,
   status: ProgressStatus,
