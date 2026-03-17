@@ -1,9 +1,30 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bot } from "lucide-react";
+import { Bot, Check, Copy } from "lucide-react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="absolute top-2 right-2 p-1 rounded bg-black/20 dark:bg-white/20 hover:bg-black/30 dark:hover:bg-white/30 text-current opacity-60 hover:opacity-100 transition-opacity"
+      aria-label="Copy code"
+    >
+      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+    </button>
+  );
+}
 
 interface Props {
   role: "user" | "assistant";
@@ -50,11 +71,19 @@ export function MessageBubble({ role, content }: Props) {
                   </code>
                 );
               },
-              pre: ({ children }) => (
-                <pre className="bg-black/10 dark:bg-white/10 rounded-lg p-3 overflow-x-auto my-2 font-mono text-xs">
-                  {children}
-                </pre>
-              ),
+              pre: ({ children }) => {
+                const text =
+                  (children as React.ReactElement<{ children?: string }>)?.props
+                    ?.children ?? "";
+                return (
+                  <div className="relative my-2">
+                    <pre className="bg-black/10 dark:bg-white/10 rounded-lg p-3 pr-9 overflow-x-auto font-mono text-xs">
+                      {children}
+                    </pre>
+                    <CopyButton text={String(text)} />
+                  </div>
+                );
+              },
               p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
               ul: ({ children }) => (
                 <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>
@@ -78,6 +107,29 @@ export function MessageBubble({ role, content }: Props) {
                 <blockquote className="border-l-2 border-primary/30 pl-3 italic opacity-80 my-2">
                   {children}
                 </blockquote>
+              ),
+              hr: () => <hr className="my-4 border-border" />,
+              table: ({ children }) => (
+                <div className="overflow-x-auto my-2">
+                  <table className="w-full border-collapse text-xs">
+                    {children}
+                  </table>
+                </div>
+              ),
+              thead: ({ children }) => (
+                <thead className="bg-black/10 dark:bg-white/10">{children}</thead>
+              ),
+              tbody: ({ children }) => <tbody>{children}</tbody>,
+              tr: ({ children }) => (
+                <tr className="border-b border-black/10 dark:border-white/10">
+                  {children}
+                </tr>
+              ),
+              th: ({ children }) => (
+                <th className="px-3 py-1.5 text-left font-semibold">{children}</th>
+              ),
+              td: ({ children }) => (
+                <td className="px-3 py-1.5">{children}</td>
               ),
             }}
           >
