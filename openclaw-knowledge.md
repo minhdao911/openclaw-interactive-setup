@@ -1454,26 +1454,86 @@ Skills install to `./skills` by default. Set `CLAWHUB_DISABLE_TELEMETRY=1` to di
 
 ## Memory System
 
-OpenClaw uses a file-based memory system persisted in the workspace directory.
+> **Sources:**
+>
+> - https://docs.openclaw.ai/concepts/memory#memory
+> - https://docs.openclaw.ai/reference/memory-config
+> - https://lumadock.com/tutorials/openclaw-advanced-memory-management
+> - https://velvetshark.com/openclaw-memory-masterclass
+> - https://milvus.io/blog/we-extracted-openclaws-memory-system-and-opensourced-it-memsearch.md
 
-### Files
+OpenClaw uses a **markdown-first, file-based memory system**. All memory lives as plain Markdown files — human-readable, editable, and version-controllable. The vector store is a derived index that can be rebuilt anytime from these source files.
 
-| File | Purpose |
-|------|---------|
-| `~/.openclaw/workspace/SOUL.md` | Agent identity + standing instructions — loaded every session |
-| `~/.openclaw/workspace/USER.md` | User preferences and profile — loaded every session |
-| `~/.openclaw/workspace/MEMORY.md` | Long-term persistent memory (full) |
-| `~/.openclaw/workspace/memory/YYYY-MM-DD.md` | Daily memory snapshots — only today's file loaded at session start |
-| `~/.openclaw/agents/<agentId>/sessions/` | Per-session conversation transcripts |
+### Memory Architecture — Four Layers
+
+| Layer | What it is | Survives compaction? |
+|-------|-----------|---------------------|
+| **Bootstrap Files** (SOUL.md, USER.md, MEMORY.md, TOOLS.md, AGENTS.md) | Injected at every session start from disk | ✅ Yes — reloads from disk |
+| **Session Transcript** (JSONL on disk) | Conversation history at `~/.openclaw/agents/<agentId>/sessions/*.jsonl` | ⚠️ Compacted — summary replaces detailed history (lossy) |
+| **LLM Context Window** (in-memory) | The fixed ~200K token container where all content competes | ❌ Temporary — cleared on session end |
+| **Retrieval Index** (SQLite + embeddings) | Searchable layer — vector + keyword (BM25) hybrid search | ✅ Yes — rebuilt from files |
+
+> **Golden rule:** "If it's not written to a file, it doesn't exist." Chat-only instructions disappear on compaction or session end.
+
+### Memory Files
+
+| File | Purpose | Loaded at session start? |
+|------|---------|-------------------------|
+| `~/.openclaw/workspace/SOUL.md` | Agent identity + standing instructions | ✅ Always |
+| `~/.openclaw/workspace/USER.md` | User preferences and profile | ✅ Always |
+| `~/.openclaw/workspace/MEMORY.md` | Long-term persistent memory (curated) | ⚠️ Prioritized over lowercase `memory.md`; query via `memory_search()` on demand |
+| `~/.openclaw/workspace/memory/YYYY-MM-DD.md` | Daily memory logs (append-only) | ✅ Today's + yesterday's loaded |
+| `~/.openclaw/agents/<agentId>/sessions/` | Per-session conversation transcripts | ❌ Not auto-loaded; searchable if session memory enabled |
+
+**Bootstrap file limits:** Per-file max **20,000 characters**; aggregate cap **150,000 characters** (~50K tokens).
 
 ### How It Works
 
-- **SOUL.md**: Agent identity + routing rules + behavioral instructions. Loaded at every session start. Any change to this file resets the prompt cache.
-- **USER.md**: User-specific preferences and profile context. Loaded at every session start alongside SOUL.md.
-- **MEMORY.md** (full): All persistent memory — avoid loading this automatically; use `memory_search()` to query it on demand.
-- **Daily memory files** (`memory/YYYY-MM-DD.md`): Lightweight session summaries. The pattern in SOUL.md instructs the agent to write a bullet-point summary (<500 words) here at the end of each session and to load only today's file at session start. This avoids loading all historical memory and keeps costs low.
-- **Session context**: Each channel+peer combination gets its own session. `session.dmScope: "per-channel-peer"` (default) isolates DM sessions per channel.
-- The agent can be instructed to save/recall information using memory tools.
+- **SOUL.md**: Agent identity + routing rules + behavioral instructions. Any change resets the prompt cache — avoid mid-session edits.
+- **USER.md**: User-specific preferences and profile context. Also resets cache on change.
+- **MEMORY.md**: Curated persistent memory for decisions, preferences, durable facts. Keep concise (under ~100 lines). Weekly, promote durable rules from daily logs here.
+- **Daily memory files** (`memory/YYYY-MM-DD.md`): Append-only session summaries. The agent writes a bullet-point summary (<500 words) at session end. System reads today's + yesterday's logs at session start.
+- **Session transcripts**: Each channel+peer combination gets its own session. Stored as JSONL.
+
+### Memory Tools
+
+| Tool | Purpose |
+|------|---------|
+| `memory_search` | Semantic recall across indexed snippets — hybrid search (BM25 + vector). Returns ~700 char snippets with file path, line range, relevance score |
+| `memory_get` | Targeted reading of specific Markdown files or line ranges. Rejects paths outside `MEMORY.md`/`memory/` |
+
+Both tools require `memorySearch.enabled: true` (default).
+
+### Three Critical Failure Modes
+
+Understanding how memory is lost helps prevent it:
+
+| Failure | What happens | Prevention |
+|---------|-------------|------------|
+| **Never Stored** | Instructions exist only in conversation, disappear on session end or compaction | Always write important info to files explicitly |
+| **Compaction Loss** | Details/nuance drop during summarization; agent works from lossy summaries | Use memory flush (see below) + explicit `/remember` commands |
+| **Pruning Trimmed** | Tool outputs cleared from context to optimize caching | Temporary — re-run tools or write summaries to memory files |
+
+### Pre-Compaction Memory Flush
+
+Automatically saves important context before context overflow triggers compaction:
+
+```json5
+{
+  agents: {
+    defaults: {
+      reserveTokensFloor: 40000,   // headroom before compaction triggers
+      memoryFlush: {
+        enabled: true,
+        softThresholdTokens: 4000, // triggers silent agentic turn to save memories
+        systemPrompt: "Session nearing compaction. Store durable memories now."
+      },
+    },
+  },
+}
+```
+
+> 💡 **Compaction timing trick:** Before switching tasks — save context to memory, manually run `/compact`, then add new instructions. This gives max lifespan in fresh context.
 
 ### Session Isolation
 
@@ -1487,6 +1547,349 @@ OpenClaw uses a file-based memory system persisted in the workspace directory.
 - DM sessions (Telegram, WhatsApp, Discord DMs): long-term memory auto-loaded
 - Group/guild channels: use `/memory` or memory tools to access persistent context
 - Per-topic sessions in Telegram forums: isolated by topic ID
+
+### Memory Search Configuration
+
+#### Embedding Providers (auto-selected in order)
+
+1. `local` — if GGUF model file exists (~0.6 GB `embeddinggemma-300m-qat-Q8_0.gguf`; auto-downloads)
+2. `openai` — if API key available (`text-embedding-3-small` default)
+3. `gemini` — if API key available (`gemini-embedding-001` default)
+4. `voyage` — if API key available
+5. `mistral` — if API key available
+6. Disabled until manually configured
+
+Set explicitly: `memorySearch.provider = "local" | "openai" | "gemini" | "voyage" | "mistral" | "ollama"`
+
+#### Basic Configuration
+
+```json5
+{
+  agents: {
+    defaults: {
+      memorySearch: {
+        enabled: true,           // default
+        provider: "local",       // or "openai", "gemini", etc.
+        fallback: "openai",      // fallback if primary fails; "none" to disable
+
+        // Local embeddings
+        local: {
+          modelPath: "path/to/model.gguf",
+          modelCacheDir: "~/.cache/embeddings",
+        },
+
+        // Remote embeddings (OpenAI, Gemini, Voyage, etc.)
+        remote: {
+          baseUrl: "https://api.example.com/v1/",
+          apiKey: "YOUR_KEY",
+          headers: { "X-Custom-Header": "value" },
+        },
+
+        // Index storage
+        store: {
+          path: "~/.openclaw/memory/{agentId}.sqlite",  // supports {agentId} token
+          vector: {
+            enabled: true,      // SQLite-vec acceleration; falls back to in-process cosine
+            extensionPath: "/path/to/sqlite-vec",  // optional
+          },
+        },
+
+        // Embedding cache
+        cache: {
+          enabled: true,
+          maxEntries: 50000,    // reduces re-embedding cost
+        },
+
+        // Extra paths to index (beyond MEMORY.md + memory/**/*.md)
+        extraPaths: ["../team-docs", "/srv/shared-notes/overview.md"],
+      },
+    },
+  },
+}
+```
+
+#### Hybrid Search (BM25 + Vector)
+
+```json5
+memorySearch: {
+  query: {
+    hybrid: {
+      enabled: true,
+      vectorWeight: 0.7,          // weights normalize to 1.0
+      textWeight: 0.3,
+      candidateMultiplier: 4,
+
+      // MMR re-ranking (diversity) — prevents near-duplicate results
+      mmr: {
+        enabled: true,            // default: false
+        lambda: 0.7,              // 0 = max diversity, 1 = max relevance
+      },
+
+      // Temporal decay (recency boost)
+      temporalDecay: {
+        enabled: true,            // default: false
+        halfLifeDays: 30,         // score halves every 30 days
+      },
+    },
+  },
+}
+```
+
+**Temporal decay details:**
+- **Never decays:** `MEMORY.md` and non-dated files in `memory/`
+- **Applies to:** Dated daily files (`memory/YYYY-MM-DD.md`) and session transcripts
+- Score = `original × e^(-λ × ageInDays)` — e.g., 7 days ago → ~84%, 30 days → 50%, 90 days → 12.5%
+
+**Chunking:** ~400 token target, 80-token overlap. File watcher syncs with 1.5s debounce.
+
+#### Batch Indexing (for large corpus)
+
+```json5
+memorySearch: {
+  remote: {
+    batch: {
+      enabled: true,           // default: false
+      concurrency: 2,
+      wait: true,
+      pollIntervalMs: 5000,
+      timeoutMinutes: 60,
+    },
+  },
+}
+```
+
+Useful for initial large-corpus indexing. OpenAI offers discounted batch pricing.
+
+#### Multimodal Memory (Gemini only)
+
+```json5
+memorySearch: {
+  provider: "gemini",
+  model: "gemini-embedding-2-preview",
+  multimodal: {
+    enabled: true,
+    modalities: ["image", "audio"],  // or ["all"]
+    maxFileBytes: 10000000,
+  },
+}
+```
+
+Supported: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.heic`, `.heif`, `.mp3`, `.wav`, `.ogg`, `.opus`, `.m4a`, `.aac`, `.flac`. Searchable but `memory_get` still returns Markdown only.
+
+#### Session Memory (Experimental)
+
+```json5
+memorySearch: {
+  experimental: { sessionMemory: true },
+  sources: ["memory", "sessions"],
+}
+```
+
+Indexes session transcripts for cross-session search. Off by default. Debounced and async — results may be temporarily stale.
+
+Session transcript sync thresholds:
+```json5
+sync: {
+  sessions: {
+    deltaBytes: 100000,    // ~100 KB
+    deltaMessages: 50,
+  },
+}
+```
+
+#### Citations
+
+```json5
+memory: {
+  citations: "auto",   // "auto" | "on" | "off"
+}
+```
+
+When `auto`/`on`: `memory_search` includes `Source: <path#line>` footer in snippets.
+
+### Memory Backend Options
+
+#### Option A — Built-in SQLite (Default)
+
+The default backend. Local hybrid search with BM25 + vector embeddings. Free, runs locally with ~300M parameter GGUF model.
+
+**Best for:** Most users. Simple setup, no external dependencies, good enough recall for personal agents.
+
+```json5
+// No special config needed — this is the default
+memorySearch: {
+  enabled: true,
+  provider: "local",
+}
+```
+
+#### Option B — QMD Backend (Advanced)
+
+> **Source:** https://docs.openclaw.ai/reference/memory-config
+
+QMD (Query-Memory-Document) enhances retrieval through hybrid search — a query like "gateway server setup" matches notes about "running the gateway on the Mac Mini" even if exact words don't appear.
+
+**Best for:** Power users outgrowing default memory. Large knowledge bases, past session transcript search, multiple independent collections.
+
+**Prerequisites:** Install QMD separately (`bun install -g https://github.com/tobi/qmd`), SQLite build allowing extensions, runs via Bun + `node-llama-cpp`.
+
+```json5
+{
+  memory: {
+    backend: "qmd",
+    citations: "auto",
+    qmd: {
+      command: "qmd",
+      searchMode: "search",           // "search" | "vsearch" | "query"
+      includeDefaultMemory: true,
+      paths: [
+        { name: "docs", path: "~/notes", pattern: "**/*.md" },
+      ],
+      update: {
+        interval: "5m",
+        debounceMs: 15000,
+        onBoot: true,
+        waitForBootSync: false,        // set true to block until indexed
+        commandTimeoutMs: 30000,
+        updateTimeoutMs: 120000,
+        embedTimeoutMs: 300000,
+      },
+      limits: {
+        maxResults: 6,
+        maxSnippetChars: 2000,
+        maxInjectedChars: 4000,
+        timeoutMs: 4000,
+      },
+      scope: {
+        default: "deny",
+        rules: [
+          { action: "allow", match: { chatType: "direct" } },
+        ],
+      },
+      sessions: {
+        enabled: true,
+        retentionDays: 90,
+        exportDir: "~/.openclaw/agents/<id>/qmd/sessions/",
+      },
+    },
+  },
+}
+```
+
+**Key features:**
+- Searches across entire knowledge bases, past sessions, and multiple collections
+- Scope rules limit indexing (e.g., DM-only — avoid noisy group chats)
+- Automatic fallback to built-in SQLite if QMD fails or binary missing
+- First search may be slow (downloads GGUF models)
+- Self-contained XDG home at `~/.openclaw/agents/<agentId>/qmd/`
+
+**Pre-warming models (optional):**
+```bash
+STATE_DIR="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}"
+export XDG_CONFIG_HOME="$STATE_DIR/agents/main/qmd/xdg-config"
+export XDG_CACHE_HOME="$STATE_DIR/agents/main/qmd/xdg-cache"
+qmd update && qmd embed
+qmd query "test" -c memory-root --json >/dev/null 2>&1
+```
+
+#### Option C — Cognee (Knowledge Graphs)
+
+> **Source:** https://lumadock.com/tutorials/openclaw-advanced-memory-management
+
+Cognee builds **relational knowledge graphs** from Markdown files — extracting entities and connections rather than just text chunks. Operates in three phases: indexing on startup, injecting graph context before agent runs, and updating after sessions complete.
+
+**Best for:** Relationship-heavy projects where understanding connections between concepts matters (e.g., "which decisions affected which components").
+
+**Key notes:**
+- Runs as a separate server
+- Use distinct `datasetName` values per project to prevent entity confusion across contexts
+- Can be layered with QMD for combined recall + relational reasoning
+
+#### Option D — Mem0 (Automatic Fact Extraction)
+
+> **Source:** https://lumadock.com/tutorials/openclaw-advanced-memory-management
+
+Mem0 automatically extracts structured facts from conversations without manual curation. Supports both cloud (app.mem0.ai) and self-hosted (ChromaDB) deployments with per-user namespacing.
+
+**Best for:** Users who want "set and forget" memory — no manual `/remember` commands needed.
+
+**Key notes:**
+- Cloud mode: API key from app.mem0.ai
+- Self-hosted: FastAPI server with ChromaDB
+- Tune `captureMode` and `autoCapture` to reduce irrelevant fact storage
+- Use explicit `/remember` for high-priority information alongside auto-capture
+
+#### Option E — MemSearch (Standalone Library)
+
+> **Source:** https://milvus.io/blog/we-extracted-openclaws-memory-system-and-opensourced-it-memsearch.md
+> **Repo:** https://github.com/zilliztech/memsearch
+
+MemSearch is OpenClaw's memory system extracted into a standalone, framework-agnostic Python library by Zilliz (MIT licensed). Same markdown-first philosophy but usable outside OpenClaw.
+
+**Best for:** Building custom agents that need OpenClaw-style memory without using OpenClaw itself. Also useful as a reference implementation.
+
+**Key features:**
+- SHA-256 content hashing for deduplication (unchanged content skips re-embedding)
+- Hybrid search: dense vector + BM25 with Reciprocal Rank Fusion (RRF) reranking
+- Live file watcher with configurable debounce
+- Backends: Milvus (distributed) or SQLite (local)
+- Embedding providers: ONNX (local/CPU), Gemini, Voyage, Ollama, sentence-transformers
+- CLI tools + async Python API
+- Claude Code plugin available
+
+```python
+mem = MemSearch(paths=["./memory"])
+await mem.index()
+results = await mem.search("query", top_k=3)
+```
+
+### Memory Strategy Recommendations
+
+#### By Use Case
+
+| Use case | Recommended setup | Why |
+|----------|------------------|-----|
+| **Solo dev, simple agent** | Built-in SQLite + local embeddings | Zero cost, no deps, good enough recall |
+| **Solo dev, heavy knowledge base** | QMD backend | Searches across sessions, external docs, multiple collections |
+| **Team/multi-project** | QMD + Cognee | Relational graphs help track cross-project decisions |
+| **"Set and forget" memory** | Mem0 (cloud or self-hosted) | Auto-captures facts without manual curation |
+| **Custom agent framework** | MemSearch library | Standalone, framework-agnostic, same architecture |
+| **Cost-sensitive, lots of media** | Built-in + Gemini multimodal | Search images/audio without separate pipeline |
+
+#### Optimization Best Practices
+
+1. **Enable memory flush** — `memoryFlush.enabled: true` is the single most impactful setting. Without it, context silently disappears on compaction.
+
+2. **Use temporal decay for long-running agents** — Set `temporalDecay.halfLifeDays: 30` to automatically de-prioritize stale daily logs while keeping MEMORY.md evergreen.
+
+3. **Enable hybrid search** — The default `vectorWeight: 0.7, textWeight: 0.3` split works well. Pure vector misses exact keywords; pure BM25 misses semantic similarity.
+
+4. **Keep MEMORY.md lean** — Under ~100 lines. Promote durable rules weekly from daily logs. Delete outdated entries.
+
+5. **Scope your indexing** — Avoid indexing noisy group chats alongside curated knowledge. Use `scope.default: "deny"` + explicit allow rules.
+
+6. **Use local embeddings when possible** — The built-in ~300M GGUF model is free and fast enough for personal agents. Only switch to remote providers for large-corpus batch indexing or multimodal search.
+
+7. **Enable embedding cache** — `cache.enabled: true` with `maxEntries: 50000` reduces re-embedding cost, especially with frequent session transcript updates.
+
+8. **Back up memory regularly** — `~/.openclaw/workspace/` and `~/.openclaw/memory/` should be in your backup routine. QMD/Cognee databases too.
+
+9. **Write a memory protocol in AGENTS.md** — Instruct the agent to:
+   - Search memory before answering past-work questions
+   - Check today's memory logs before starting new tasks
+   - Write important learnings to files immediately
+   - Add corrections as rules to MEMORY.md after mistakes
+   - Summarize to daily logs when sessions end or context grows large
+
+10. **Start simple, layer up** — Start with built-in SQLite. Add QMD when outgrowing default. Add Cognee only for relationship-dependent projects.
+
+### Diagnostic Commands
+
+```bash
+/context list    # reveals loaded files, truncation status, injection success
+/compact [instructions]  # manual compaction with optional focus guidance
+/verbose         # verifies memory search fires and returns results
+```
 
 ---
 
