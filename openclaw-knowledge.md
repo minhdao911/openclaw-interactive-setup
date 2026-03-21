@@ -19,6 +19,7 @@
 - [SOUL.md](#soulmd)
 - [Cron Jobs & Heartbeats](#cron-jobs--heartbeats)
 - [Model Providers](#model-providers)
+- [Ollama (Local Models)](#ollama-local-models)
 - [CLI Reference](#cli-reference)
 - [Troubleshooting](#troubleshooting)
 - [Cost Optimization](#cost-optimization)
@@ -2378,6 +2379,269 @@ openclaw models scan [--no-probe] [--min-params 7]  # scan OpenRouter free tier
 
 ---
 
+## Ollama (Local Models)
+
+> **Sources:**
+>
+> - https://docs.openclaw.ai/providers/ollama
+> - https://docs.ollama.com/integrations/openclaw
+> - https://ollama.com/blog/openclaw
+
+Ollama lets you run OpenClaw with **fully local models at zero API cost**. Useful as a primary provider for privacy-sensitive or budget-conscious setups, or as a free fallback/heartbeat model alongside cloud providers.
+
+### Quick Start (via `ollama launch`)
+
+The fastest way to get OpenClaw running with Ollama:
+
+```bash
+ollama launch openclaw
+```
+
+This single command automates: npm install (if needed), security acknowledgment, model selection, provider configuration, daemon install, and web search plugin setup.
+
+```bash
+# Reconfigure model/provider without full re-onboard
+ollama launch openclaw --config
+
+# Specify a model directly
+ollama launch openclaw --model glm-4.7-flash
+
+# Headless / CI / Docker (skip interactive prompts, auto-download model)
+ollama launch openclaw --model kimi-k2.5:cloud --yes
+
+# Stop the gateway
+openclaw gateway stop
+```
+
+> **Legacy alias:** `ollama launch clawdbot` still works (OpenClaw was previously called Clawdbot).
+
+---
+
+### Setup via OpenClaw Onboarding
+
+```bash
+openclaw onboard
+# Select "Ollama" from the provider list
+```
+
+The wizard discovers available models, auto-pulls selected ones, and detects context window sizes.
+
+Non-interactive:
+
+```bash
+openclaw onboard --non-interactive --auth-choice ollama --accept-risk
+```
+
+---
+
+### Manual Setup
+
+**Step 1 — Install Ollama**
+
+```bash
+# macOS
+brew install ollama
+# or
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Linux
+curl -fsSL https://ollama.com/install.sh | sh
+systemctl start ollama
+systemctl enable ollama
+```
+
+**Step 2 — Pull a model**
+
+```bash
+ollama pull glm-4.7-flash       # ~25 GB VRAM, good general-purpose
+ollama pull qwen3-coder          # coding-optimized
+ollama pull llama3.2:3b          # tiny, good for heartbeats (~2 GB)
+```
+
+**Step 3 — Configure OpenClaw**
+
+---
+
+### Configuration
+
+#### Option A — Implicit Discovery (simplest)
+
+Set a single environment variable and OpenClaw auto-discovers local models:
+
+```bash
+export OLLAMA_API_KEY="ollama-local"
+```
+
+OpenClaw queries Ollama's `/api/tags` endpoint, discovers all pulled models, and detects context window sizes automatically.
+
+#### Option B — Explicit Provider Config
+
+Use when Ollama runs on a different host, or you need specific model settings:
+
+```json5
+{
+  models: {
+    providers: {
+      ollama: {
+        baseUrl: "http://ollama-host:11434",
+        apiKey: "ollama-local",
+        api: "ollama",
+        models: [
+          {
+            id: "glm-4.7-flash",
+            name: "GLM 4.7 Flash",
+            contextWindow: 65536,
+            maxTokens: 65536,
+          },
+          {
+            id: "qwen3-coder",
+            name: "Qwen3 Coder",
+            contextWindow: 65536,
+            maxTokens: 65536,
+          },
+        ],
+      },
+    },
+  },
+}
+```
+
+#### Setting the Primary Model
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "ollama/glm-4.7-flash",
+        fallbacks: ["ollama/qwen3-coder", "anthropic/claude-haiku-4-5"],
+      },
+    },
+  },
+}
+```
+
+---
+
+### ⚠️ Critical: Use Native Ollama API, Not OpenAI-Compatible Mode
+
+**Always use the native Ollama URL** (`http://host:11434`) — do **NOT** append `/v1`.
+
+| Mode | URL | Tool calling | Streaming |
+|------|-----|-------------|-----------|
+| **Native (correct)** | `http://host:11434` | ✅ Works | ✅ Works |
+| **OpenAI-compat (broken)** | `http://host:11434/v1` | ❌ Breaks — outputs raw tool JSON as plain text | ⚠️ May need disabling |
+
+The native `/api/chat` endpoint fully supports streaming and tool calling simultaneously. The OpenAI-compatible `/v1` mode has unreliable tool calling and may require disabling streaming.
+
+---
+
+### Context Window Requirements
+
+> ⚠️ **OpenClaw requires at least 64K token context window for local models.**
+
+This is a hard constraint — models with smaller context windows will truncate conversations and lose critical context.
+
+| Model | Context | VRAM | Notes |
+|-------|---------|------|-------|
+| `glm-4.7-flash` | 128K | ~25 GB | Good general-purpose + reasoning |
+| `glm-4.7` | 128K | ~25 GB | General-purpose |
+| `qwen3-coder` | 128K | varies | Coding-optimized |
+| `gpt-oss:20b` | 128K | ~12 GB | Smaller variant |
+| `gpt-oss:120b` | 128K | ~70 GB | Large variant |
+| `llama3.2:3b` | 8K | ~2 GB | Too small for primary — **heartbeats only** |
+
+Auto-discovered models use context windows reported by Ollama. For explicit configs, set both `contextWindow` and `maxTokens`.
+
+---
+
+### Cloud Models via Ollama
+
+Ollama also offers cloud-hosted models that don't require local VRAM:
+
+```bash
+# Sign in for cloud model access
+ollama signin
+```
+
+| Model | Description |
+|-------|-------------|
+| `kimi-k2.5:cloud` | 1T parameter agentic model, multimodal reasoning with subagents |
+| `minimax-m2.7:cloud` | Fast, efficient coding and real-world productivity |
+| `glm-5:cloud` | Reasoning and code generation |
+
+Select during setup:
+
+```bash
+ollama launch openclaw --model kimi-k2.5:cloud
+```
+
+Cloud models don't require local GPU resources but need `ollama signin`.
+
+---
+
+### Web Search Plugin
+
+Local Ollama models can use web search via the built-in plugin:
+
+```bash
+# Requires Ollama sign-in for local models
+ollama signin
+
+# Install the plugin
+openclaw plugins install @ollama/openclaw-web-search
+```
+
+---
+
+### Reasoning Model Detection
+
+Ollama models with reasoning capabilities are auto-detected by heuristics matching names containing "r1", "reasoning", or "think". All Ollama models show as $0 cost since they run locally.
+
+---
+
+### Troubleshooting
+
+#### `ollama: command not found`
+
+```bash
+source ~/.bashrc && ollama --version
+# If still failing after install:
+sudo reboot
+```
+
+#### `ollama pull` fails or stalls
+
+Check disk space (need at least 3 GB free for small models, 25+ GB for larger ones):
+
+```bash
+df -h
+```
+
+#### Ollama service won't start
+
+```bash
+# Check logs
+journalctl -u ollama -n 50
+
+# Low-RAM fallback — run manually
+ollama serve &
+```
+
+#### Model produces raw JSON instead of using tools
+
+You're using the OpenAI-compatible endpoint (`/v1`). Switch to the native URL:
+
+```json5
+// ❌ Wrong
+baseUrl: "http://localhost:11434/v1"
+
+// ✅ Correct
+baseUrl: "http://localhost:11434"
+```
+
+---
+
 ## CLI Reference
 
 > **Source:** https://docs.openclaw.ai/cli
@@ -2661,7 +2925,10 @@ ollama serve &
 | **Cache warm heartbeat** | 55-minute ping prevents cache expiry, avoids rebuild cost | `agents.defaults.heartbeat.every: "55m"` |
 | **Context pruning** | Removes stale tool outputs after cache TTL window | `agents.defaults.contextPruning` |
 | **Load limits** | Only load today's memory file, not full history | SOUL.md session init block |
+| **Ollama as primary** | Run entirely on local models — $0 API cost | `model.primary: "ollama/glm-4.7-flash"` |
 | **Ollama for heartbeats** | Free local model for routine check-ins | `heartbeat.model: "ollama/llama3.2:3b"` |
+| **Ollama for cron jobs** | Free local model for scheduled tasks | `--model ollama/llama3.2:3b` on cron jobs |
+| **Hybrid: local + cloud** | Ollama primary with cloud fallback for complex tasks | `fallbacks: ["anthropic/claude-haiku-4-5"]` |
 | **Skill pruning** | Each skill adds ~97 chars to context — remove unused ones | `openclaw skills` |
 | **Light context cron jobs** | Skip workspace bootstrap for routine scheduled tasks | `--light-context` flag |
 | **OpenRouter free tier** | Free models for non-critical fallback tasks | `openclaw models scan` |
@@ -2731,6 +2998,87 @@ Check cache performance per session:
 ```
 openclaw shell → /usage full
 ```
+
+---
+
+### Local Models for Zero-Cost Operation (Ollama)
+
+Running Ollama as your primary provider eliminates API costs entirely. All Ollama models are $0 — they run on your hardware.
+
+#### Full Local Setup (zero cloud spend)
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "ollama/glm-4.7-flash",       // $0 — 64K+ context, tool calling
+        fallbacks: ["ollama/qwen3-coder"],      // $0 fallback
+      },
+      heartbeat: {
+        every: "55m",
+        model: "ollama/llama3.2:3b",            // $0 — tiny model for pings
+      },
+    },
+  },
+}
+```
+
+**Trade-offs:**
+- ✅ Zero API cost, full privacy, no rate limits
+- ⚠️ Requires capable GPU (25+ GB VRAM for recommended models)
+- ⚠️ Local models are weaker at complex reasoning vs. cloud frontier models
+- ⚠️ Prompt caching (`cacheRetention`) has no effect — Ollama doesn't charge per-token
+
+#### Hybrid Setup (local primary + cloud fallback)
+
+Best balance of cost and capability — use local for routine tasks, escalate to cloud for complex ones:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "ollama/glm-4.7-flash",        // $0 for most tasks
+        fallbacks: ["anthropic/claude-haiku-4-5"], // paid fallback for hard tasks
+      },
+      heartbeat: {
+        every: "55m",
+        model: "ollama/llama3.2:3b",            // $0 heartbeats
+      },
+    },
+  },
+}
+```
+
+Add model routing rules in SOUL.md to control when the agent escalates:
+
+```
+SWITCH TO cloud fallback only when:
+- Local model fails the task after 2 attempts
+- Task requires advanced reasoning or code review
+- Security analysis or vulnerability scanning
+```
+
+#### Cloud Models via Ollama (no local GPU needed)
+
+If you lack GPU resources but still want to use Ollama as the provider layer, use Ollama cloud models:
+
+```bash
+ollama signin
+ollama launch openclaw --model kimi-k2.5:cloud
+```
+
+These models run on Ollama's infrastructure. They may have usage limits but don't require local VRAM.
+
+#### Cost Comparison
+
+| Setup | Monthly cost (est.) | Requirements |
+|-------|-------------------|-------------|
+| **Full Ollama local** | $0 | GPU with 25+ GB VRAM |
+| **Ollama + cloud fallback** | $5–30 | GPU + API key |
+| **Ollama heartbeats only** | Saves ~$5–15/mo vs. cloud heartbeats | Any machine (3B model needs ~2 GB) |
+| **Cloud only (Haiku primary)** | $30–150 | API key only |
 
 ---
 
