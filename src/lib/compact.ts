@@ -9,7 +9,7 @@ export function shouldCompact(messages: DbMessage[]): boolean {
   return estimateConversationTokens(messages) >= COMPACTION_THRESHOLD
 }
 
-export async function runCompaction(messages: DbMessage[]): Promise<DbMessage[]> {
+export async function runCompaction(conversationId: string, messages: DbMessage[]): Promise<DbMessage[]> {
   const recentMessages = messages.slice(-MESSAGES_TO_KEEP)
 
   const res = await fetch('/api/compact', {
@@ -26,6 +26,6 @@ export async function runCompaction(messages: DbMessage[]): Promise<DbMessage[]>
   }
 
   const { summary } = await res.json()
-  await replaceWithCompaction(summary, recentMessages)
+  await replaceWithCompaction(conversationId, summary, recentMessages)
   return recentMessages
 }

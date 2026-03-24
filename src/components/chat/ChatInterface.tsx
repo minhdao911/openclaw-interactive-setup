@@ -1,9 +1,14 @@
 "use client";
 
+import { ChatSidebar } from "@/components/sidebar/ChatSidebar";
 import { ProgressSidebar } from "@/components/sidebar/ProgressSidebar";
 import { useClawChat } from "@/hooks/useClawChat";
+import { clearAll, createConversation, deleteConversation } from "@/lib/db/queries";
+import { db } from "@/lib/db/schema";
+import { useLiveQuery } from "dexie-react-hooks";
 import { X } from "lucide-react";
-import { useState } from "react";
+
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { MessageInput } from "./MessageInput";
 import { MessageList } from "./MessageList";
@@ -35,7 +40,55 @@ const MODEL_GROUPS = [
 
 export function ChatInterface() {
   const [modelId, setModelId] = useState(MODEL_GROUPS[0].models[0].id);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState<Error | null>(null);
+
+  const conversations = useLiveQuery(
+    () => db.conversation.orderBy("updatedAt").reverse().toArray(),
+    [],
+  );
+
+  // Once Dexie loads: pick the most recent conversation, or create one if none exist
+  useEffect(() => {
+    if (conversations === undefined || selectedId) return;
+    (conversations.length > 0
+      ? Promise.resolve(conversations[0].id)
+      : createConversation().then((c) => c.id)
+    ).then(setSelectedId);
+  }, [conversations, selectedId]);
+
+  const activeConversationId = selectedId ?? "";
+
+  const handleCreate = useCallback(async () => {
+    const conv = await createConversation();
+    setSelectedId(conv.id);
+  }, []);
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await deleteConversation(id);
+      if (id === activeConversationId) {
+        const remaining = await db.conversation
+          .orderBy("updatedAt")
+          .reverse()
+          .toArray();
+        if (remaining.length > 0) {
+          setSelectedId(remaining[0].id);
+        } else {
+          const conv = await createConversation();
+          setSelectedId(conv.id);
+        }
+      }
+    },
+    [activeConversationId],
+  );
+
+  const handleResetAll = useCallback(async () => {
+    await clearAll();
+    const conv = await createConversation();
+    setSelectedId(conv.id);
+  }, []);
+
   const {
     messages,
     input,
@@ -44,17 +97,15 @@ export function ChatInterface() {
     sendSuggestion,
     isLoading,
     loaded,
-    resetAll,
     usage,
     error,
     reload,
-  } = useClawChat(modelId);
+  } = useClawChat(activeConversationId ?? "", modelId);
 
   const totalTokens = usage.promptTokens + usage.completionTokens;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Chat area */}
+    <div className="flex h-screen">
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
         <header className="flex items-center gap-3 px-5 py-3 border-b border-border shrink-0">
@@ -91,8 +142,8 @@ export function ChatInterface() {
                 ))}
               </select>
               <Button
-                onClick={resetAll}
-                title="Reset all messages and progress (debug)"
+                onClick={handleResetAll}
+                title="Reset current conversation (debug)"
                 variant="destructive"
               >
                 Reset
@@ -100,50 +151,61 @@ export function ChatInterface() {
             </div>
           )}
         </header>
-
-        {/* Messages */}
-        {loaded ? (
-          <MessageList
-            messages={messages}
-            isLoading={isLoading}
-            onSuggestion={sendSuggestion}
+        <div className="flex h-full overflow-hidden bg-background">
+          {/* Left: Chat sessions sidebar */}
+          <ChatSidebar
+            activeId={activeConversationId ?? ""}
+            onSelect={setSelectedId}
+            onCreate={handleCreate}
+            onDelete={handleDelete}
           />
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          </div>
-        )}
 
-        {/* Error banner */}
-        {error && error !== dismissedError && (
-          <div className="flex items-center gap-3 px-4 py-3 mx-4 mb-2 rounded-lg border border-destructive/50 bg-destructive/10 text-sm">
-            <span className="flex-1 min-w-0 truncate text-destructive">
-              {error.message}
-            </span>
-            <Button size="sm" variant="outline" onClick={() => reload()}>
-              Try again
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setDismissedError(error)}
-              className="p-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
-            >
-              <X className="size-3" />
-            </Button>
-          </div>
-        )}
+          {/* Center: Chat area */}
+          <div className="flex flex-col flex-1 min-w-0">
+            {/* Messages */}
+            {loaded ? (
+              <MessageList
+                messages={messages}
+                isLoading={isLoading}
+                onSuggestion={sendSuggestion}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-sm text-muted-foreground">Loading…</div>
+              </div>
+            )}
 
-        {/* Input */}
-        <MessageInput
-          input={input}
-          onChange={handleInputChange}
-          onSubmit={submitMessage}
-          isLoading={isLoading}
-        />
+            {/* Error banner */}
+            {error && error !== dismissedError && (
+              <div className="flex items-center gap-3 px-4 py-3 mx-4 mb-2 rounded-lg border border-destructive/50 bg-destructive/10 text-sm">
+                <span className="flex-1 min-w-0 truncate text-destructive">
+                  {error.message}
+                </span>
+                <Button size="sm" variant="outline" onClick={() => reload()}>
+                  Try again
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDismissedError(error)}
+                  className="p-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                >
+                  <X className="size-3" />
+                </Button>
+              </div>
+            )}
+
+            {/* Input */}
+            <MessageInput
+              input={input}
+              onChange={handleInputChange}
+              onSubmit={submitMessage}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
       </div>
-
-      {/* Checkpoints sidebar */}
+      {/* Right: Checkpoints sidebar */}
       <ProgressSidebar />
     </div>
   );

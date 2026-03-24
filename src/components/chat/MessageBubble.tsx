@@ -43,7 +43,7 @@ export function MessageBubble({ role, content }: Props) {
       )}
       <div
         className={cn(
-          "px-4 text-sm",
+          "px-4 text-sm min-w-0",
           isUser &&
             "max-w-[80%] rounded-2xl py-3 bg-primary text-primary-foreground rounded-br-sm",
         )}
@@ -76,8 +76,8 @@ export function MessageBubble({ role, content }: Props) {
                   (children as React.ReactElement<{ children?: string }>)?.props
                     ?.children ?? "";
                 return (
-                  <div className="relative my-2">
-                    <pre className="bg-black/10 dark:bg-white/10 rounded-lg p-3 pr-9 overflow-x-auto font-mono text-xs">
+                  <div className="relative my-2 max-w-full">
+                    <pre className="bg-black/10 dark:bg-white/10 rounded-lg p-3 pr-9 overflow-x-auto font-mono text-xs max-w-full">
                       {children}
                     </pre>
                     <CopyButton text={String(text)} />

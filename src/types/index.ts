@@ -4,12 +4,15 @@ export type ProgressStatus = 'not_started' | 'in_progress' | 'done'
 
 export interface DbConversation {
   id: string
+  title: string
   summary: string | null
+  createdAt: number
   updatedAt: number
 }
 
 export interface DbMessage {
   id: string
+  conversationId: string
   role: MessageRole
   content: string
   createdAt: number

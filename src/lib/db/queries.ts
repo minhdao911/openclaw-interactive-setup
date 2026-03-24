@@ -3,54 +3,95 @@ import { db } from './schema'
 import { PROGRESS_SECTIONS } from '@/lib/progress-sections'
 import type { DbConversation, DbMessage, DbProgress, ProgressStatus } from '@/types'
 
-const CONVERSATION_ID = 'main'
-
-export async function getConversation(): Promise<DbConversation> {
-  const existing = await db.conversation.get(CONVERSATION_ID)
-  if (existing) return existing
+export async function createConversation(): Promise<DbConversation> {
   const conv: DbConversation = {
-    id: CONVERSATION_ID,
+    id: nanoid(),
+    title: 'New Chat',
     summary: null,
+    createdAt: Date.now(),
     updatedAt: Date.now(),
   }
   await db.conversation.add(conv)
   return conv
 }
 
-export async function updateConversationSummary(summary: string): Promise<void> {
-  await db.conversation.update(CONVERSATION_ID, { summary, updatedAt: Date.now() })
+export async function getConversation(id: string): Promise<DbConversation> {
+  const existing = await db.conversation.get(id)
+  if (existing) return existing
+  const conv: DbConversation = {
+    id,
+    title: 'New Chat',
+    summary: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+  await db.conversation.add(conv)
+  return conv
 }
 
-export async function getMessages(): Promise<DbMessage[]> {
-  return db.messages.orderBy('createdAt').toArray()
+export async function updateConversationSummary(id: string, summary: string): Promise<void> {
+  await db.conversation.update(id, { summary, updatedAt: Date.now() })
+}
+
+export async function setConversationTitle(id: string, title: string): Promise<void> {
+  await db.conversation.update(id, { title, updatedAt: Date.now() })
+}
+
+export async function deleteConversation(id: string): Promise<void> {
+  await db.transaction('rw', db.messages, db.conversation, async () => {
+    await db.messages.where('conversationId').equals(id).delete()
+    await db.conversation.delete(id)
+  })
+}
+
+export async function getMessages(conversationId: string): Promise<DbMessage[]> {
+  return db.messages.where('conversationId').equals(conversationId).sortBy('createdAt')
 }
 
 export async function addMessage(
+  conversationId: string,
   role: DbMessage['role'],
   content: string
 ): Promise<DbMessage> {
   const msg: DbMessage = {
     id: nanoid(),
+    conversationId,
     role,
     content,
     createdAt: Date.now(),
   }
   await db.messages.add(msg)
-  await db.conversation.update(CONVERSATION_ID, { updatedAt: Date.now() })
+  await db.conversation.update(conversationId, { updatedAt: Date.now() })
   return msg
 }
 
 export async function replaceWithCompaction(
+  conversationId: string,
   summary: string,
   recentMessages: DbMessage[]
 ): Promise<void> {
   await db.transaction('rw', db.messages, db.conversation, async () => {
-    await db.messages.clear()
+    await db.messages.where('conversationId').equals(conversationId).delete()
     await db.messages.bulkAdd(recentMessages)
-    await db.conversation.update(CONVERSATION_ID, {
+    await db.conversation.update(conversationId, {
       summary,
       updatedAt: Date.now(),
     })
+  })
+}
+
+export async function clearConversation(id: string): Promise<void> {
+  await db.transaction('rw', db.messages, db.conversation, async () => {
+    await db.messages.where('conversationId').equals(id).delete()
+    await db.conversation.update(id, { summary: null, title: 'New Chat', updatedAt: Date.now() })
+  })
+}
+
+export async function clearAll(): Promise<void> {
+  await db.transaction('rw', db.messages, db.conversation, db.progress, async () => {
+    await db.messages.clear()
+    await db.progress.clear()
+    await db.conversation.clear()
   })
 }
 
@@ -73,14 +114,6 @@ export async function getProgress(): Promise<DbProgress[]> {
   }
 
   return existing
-}
-
-export async function clearAll(): Promise<void> {
-  await db.transaction('rw', db.messages, db.conversation, db.progress, async () => {
-    await db.messages.clear()
-    await db.progress.clear()
-    await db.conversation.put({ id: CONVERSATION_ID, summary: null, updatedAt: Date.now() })
-  })
 }
 
 export async function updateProgress(

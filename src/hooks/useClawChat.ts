@@ -4,9 +4,10 @@ import { calcCost } from "@/lib/ai/provider";
 import { runCompaction, shouldCompact } from "@/lib/compact";
 import {
   addMessage,
-  clearAll,
+  clearConversation,
   getConversation,
   getMessages,
+  setConversationTitle,
 } from "@/lib/db/queries";
 import { useChat } from "ai/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,7 +18,7 @@ export interface UsageStats {
   cost: number | null;
 }
 
-export function useClawChat(modelId: string) {
+export function useClawChat(conversationId: string, modelId: string) {
   const [conversationSummary, setConversationSummary] = useState<string | null>(
     null,
   );
@@ -28,6 +29,9 @@ export function useClawChat(modelId: string) {
     cost: null,
   });
   const isCompacting = useRef(false);
+  // Capture current conversationId in a ref so onFinish closure always has latest value
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
 
   const {
     messages,
@@ -43,6 +47,7 @@ export function useClawChat(modelId: string) {
     api: "/api/chat",
     body: { conversationSummary, modelId },
     onFinish: async (message, { usage: msgUsage }) => {
+      const convId = conversationIdRef.current;
       setUsage((prev) => {
         const newPrompt = prev.promptTokens + (msgUsage?.promptTokens ?? 0);
         const newCompletion =
@@ -60,16 +65,15 @@ export function useClawChat(modelId: string) {
         };
       });
 
-      await addMessage("assistant", message.content);
+      await addMessage(convId, "assistant", message.content);
 
-      // Check if compaction is needed
       if (!isCompacting.current) {
-        const allMessages = await getMessages();
+        const allMessages = await getMessages(convId);
         if (shouldCompact(allMessages)) {
           isCompacting.current = true;
           try {
-            const kept = await runCompaction(allMessages);
-            const conv = await getConversation();
+            const kept = await runCompaction(convId, allMessages);
+            const conv = await getConversation(convId);
             setConversationSummary(conv.summary);
             setMessages(
               kept.map((m) => ({
@@ -87,12 +91,19 @@ export function useClawChat(modelId: string) {
     },
   });
 
-  // Load conversation from Dexie on mount
+  // Reload when conversationId changes
   useEffect(() => {
+    setMessages([]);
+    setLoaded(false);
+    setConversationSummary(null);
+    setUsage({ promptTokens: 0, completionTokens: 0, cost: null });
+
+    if (!conversationId) return;
+
     async function load() {
       const [conv, dbMessages] = await Promise.all([
-        getConversation(),
-        getMessages(),
+        getConversation(conversationId),
+        getMessages(conversationId),
       ]);
       setConversationSummary(conv.summary);
       if (dbMessages.length > 0) {
@@ -108,33 +119,41 @@ export function useClawChat(modelId: string) {
       setLoaded(true);
     }
     load();
-  }, [setMessages]);
+  }, [conversationId, setMessages]);
 
   const submitMessage = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!input.trim() || isLoading) return;
-      await addMessage("user", input);
+      const isFirstMessage = messages.length === 0;
+      await addMessage(conversationId, "user", input);
+      if (isFirstMessage) {
+        await setConversationTitle(conversationId, input.trim().slice(0, 60));
+      }
       handleSubmit(e);
     },
-    [input, isLoading, handleSubmit],
+    [conversationId, input, isLoading, handleSubmit, messages.length],
   );
 
   const sendSuggestion = useCallback(
     async (text: string) => {
       if (isLoading) return;
-      await addMessage("user", text);
+      const isFirstMessage = messages.length === 0;
+      await addMessage(conversationId, "user", text);
+      if (isFirstMessage) {
+        await setConversationTitle(conversationId, text.slice(0, 60));
+      }
       append({ role: "user", content: text });
     },
-    [isLoading, append],
+    [conversationId, isLoading, append, messages.length],
   );
 
-  const resetAll = useCallback(async () => {
-    await clearAll();
+  const resetCurrent = useCallback(async () => {
+    await clearConversation(conversationId);
     setMessages([]);
     setConversationSummary(null);
     setUsage({ promptTokens: 0, completionTokens: 0, cost: null });
-  }, [setMessages]);
+  }, [conversationId, setMessages]);
 
   return {
     messages,
@@ -144,7 +163,7 @@ export function useClawChat(modelId: string) {
     sendSuggestion,
     isLoading,
     loaded,
-    resetAll,
+    resetCurrent,
     usage,
     error,
     reload,
