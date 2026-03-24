@@ -333,10 +333,164 @@ ssh -N -L 18789:127.0.0.1:18789 user@your-vps-ip
 
 ### Docker / Docker Compose
 
+> **Sources:**
+>
+> - https://docs.openclaw.ai/install/docker
+> - https://github.com/phioranex/openclaw-docker
+> - https://hub.docker.com/r/alpine/openclaw
+
+**Requirements:** Docker Desktop/Engine + Docker Compose v2, minimum 2 GB RAM (build may fail with 1 GB).
+
+#### Option A — From the OpenClaw Repo (Official)
+
+Clone the repo and use the built-in setup script or manual commands:
+
 ```bash
-# Other install methods available: Docker, Podman, Nix, Ansible, Bun
-# See https://docs.openclaw.ai/install for Docker Compose examples
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+
+# Automated setup
+./scripts/docker/setup.sh
+
+# Or use a pre-built image instead of building locally:
+export OPENCLAW_IMAGE="ghcr.io/openclaw/openclaw:latest"
+./scripts/docker/setup.sh
 ```
+
+**Manual steps (if not using the setup script):**
+
+```bash
+docker build -t openclaw:local -f Dockerfile .
+docker compose run --rm openclaw-cli onboard
+docker compose up -d openclaw-gateway
+```
+
+#### Option B — Pre-built Image from Docker Hub (No Repo Clone)
+
+> **Docker Hub:** https://hub.docker.com/r/alpine/openclaw
+
+Pull and run directly without cloning any repo:
+
+```bash
+docker pull alpine/openclaw:latest
+docker run -it -p 18789:18789 -v ~/.openclaw:/home/node/.openclaw alpine/openclaw:latest
+```
+
+**Available image tags:**
+
+| Tag       | Description                                  |
+| --------- | -------------------------------------------- |
+| `latest`  | Current stable build (updated daily)         |
+| `vX.Y.Z`  | Specific version releases                    |
+| `main`    | Cutting-edge branch version                  |
+
+You can also use this image with the official setup script by setting `OPENCLAW_IMAGE`:
+
+```bash
+export OPENCLAW_IMAGE="alpine/openclaw:latest"
+```
+
+#### Option C — openclaw-docker by Phioranex (No Repo Clone)
+
+> **Source:** https://github.com/phioranex/openclaw-docker
+>
+> Community-maintained Docker setup with one-line install scripts. Rebuilds daily; checks for new releases every 6 hours.
+
+**One-line install (Linux/macOS):**
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/phioranex/openclaw-docker/main/install.sh)
+```
+
+**One-line install (Windows PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/phioranex/openclaw-docker/main/install.ps1 | iex
+```
+
+The install script handles prerequisites checking, image pulling, onboarding, and gateway startup automatically.
+
+#### Volume Mounts & Persistence
+
+Compose binds these paths for persistence:
+
+| Host path (configurable)       | Container path                    | Purpose                          |
+| ------------------------------ | --------------------------------- | -------------------------------- |
+| `OPENCLAW_CONFIG_DIR`          | `/home/node/.openclaw`            | Config, credentials, sessions    |
+| `OPENCLAW_WORKSPACE_DIR`      | `/home/node/.openclaw/workspace`  | Agent files (SOUL.md, MEMORY.md) |
+
+Configuration persists in `~/.openclaw/` across container restarts.
+
+> ⚠️ Monitor disk growth in: `media/`, session JSONL files, `cron/runs/`, and `/tmp/openclaw/`.
+
+#### Key Environment Variables
+
+| Variable                  | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `OPENCLAW_IMAGE`          | Specify remote image instead of local build         |
+| `OPENCLAW_EXTENSIONS`     | Pre-install extension dependencies                  |
+| `OPENCLAW_EXTRA_MOUNTS`   | Add host bind mounts (comma-separated)              |
+| `OPENCLAW_HOME_VOLUME`    | Persist `/home/node` in a named volume              |
+| `OPENCLAW_SANDBOX`        | Enable agent sandbox (`1`, `true`, `yes`, `on`)     |
+| `OPENCLAW_DOCKER_SOCKET`  | Override Docker socket path                         |
+| `OPENCLAW_GATEWAY_BIND`   | Set to `lan` for host access to published ports     |
+
+#### Channel Setup (Docker)
+
+```bash
+# WhatsApp (QR code)
+docker compose run --rm openclaw-cli channels login
+
+# Telegram
+docker compose run --rm openclaw-cli channels add --channel telegram --token "<token>"
+
+# Discord
+docker compose run --rm openclaw-cli channels add --channel discord --token "<token>"
+```
+
+#### Access & Health Checks
+
+Dashboard: `http://127.0.0.1:18789/`
+
+```bash
+curl -fsS http://127.0.0.1:18789/healthz    # liveness (no auth)
+curl -fsS http://127.0.0.1:18789/readyz     # readiness (no auth)
+```
+
+#### Agent Sandbox (Docker)
+
+Sandboxing isolates agent tool execution in a separate container:
+
+```bash
+# Build sandbox image
+scripts/sandbox-setup.sh
+
+# Enable sandbox via setup script
+export OPENCLAW_SANDBOX=1
+./scripts/docker/setup.sh
+```
+
+Config equivalent:
+
+```json5
+{
+  agents: {
+    defaults: {
+      sandbox: {
+        mode: "non-main", // off | non-main | all
+        scope: "agent",   // session | agent | shared
+      },
+    },
+  },
+}
+```
+
+#### Important Notes
+
+- Container runs as non-root user `node` (uid 1000)
+- If permission errors occur, ensure `/home/node/.openclaw` is owned by uid 1000
+- For CI/automation, add `-T` flag to `docker compose run` to disable pseudo-TTY allocation
+- Use `OPENCLAW_GATEWAY_BIND=lan` if you need host access to published ports
 
 ---
 
@@ -456,6 +610,19 @@ At the start of the wizard (after the risk acknowledgment), you choose your onbo
 | **Tailscale**      | Off                                      | You choose                                |
 | **Daemon install** | Auto (yes)                               | You choose                                |
 | **Best for**       | Local, single-user, getting started fast | VPS, remote access, custom network setups |
+
+**Which one should you choose?**
+
+| Environment | Recommendation | Why |
+| --- | --- | --- |
+| **Local Mac/Linux (personal use, same machine)** | **Quickstart** | Loopback bind is fine — everything runs on one box. No network config needed. |
+| **VPS / remote server** | **Manual** | You need **LAN bind** (`0.0.0.0`) so the gateway is reachable from other machines or through SSH tunnels. Quickstart locks you to loopback. |
+| **macOS VM (Lume)** | **Manual** | The VM has its own network interface. You need **LAN bind** so the host Mac can reach the gateway (via SSH tunnel or direct IP). |
+| **Docker (remote host)** | **Manual** | Container networking requires **LAN bind** for published ports to work. Set `OPENCLAW_GATEWAY_BIND=lan` or configure bind in the wizard. |
+| **Tailscale mesh** | **Manual** | Lets you pick Tailnet bind or Funnel exposure — not available in Quickstart. |
+| **Multi-user / shared setup** | **Manual** | Allows password auth, custom port, and explicit security choices. |
+
+> **Rule of thumb:** If OpenClaw and everything that talks to it (browser, messaging clients) are on the **same machine**, Quickstart is fine. If **anything needs to reach the gateway over the network** (VPS, VM, Docker, remote access), choose **Manual** and set bind to **LAN**.
 
 **Quickstart defaults:**
 
