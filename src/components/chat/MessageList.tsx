@@ -1,16 +1,12 @@
 "use client";
 
-import type { PendingConfirmation } from "@/hooks/useClawChat";
 import type { Message } from "ai";
 import { useEffect, useRef } from "react";
 import { MessageBubble } from "./MessageBubble";
-import { ProgressConfirmation } from "./ProgressConfirmation";
 
 interface Props {
   messages: Message[];
   isLoading: boolean;
-  pendingConfirmations: PendingConfirmation[];
-  onConfirm: (confirmation: PendingConfirmation, confirmed: boolean) => void;
   onSuggestion: (text: string) => void;
 }
 
@@ -52,18 +48,12 @@ function WelcomeMessage({
   );
 }
 
-export function MessageList({
-  messages,
-  isLoading,
-  pendingConfirmations,
-  onConfirm,
-  onSuggestion,
-}: Props) {
+export function MessageList({ messages, isLoading, onSuggestion }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "instant" });
-  }, [messages, pendingConfirmations]);
+  }, [messages]);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -71,26 +61,13 @@ export function MessageList({
         <WelcomeMessage onSuggestion={onSuggestion} />
       ) : (
         <div className="px-4 py-4 space-y-8">
-          {messages.map((message) => {
-            const confirmationsForMessage = pendingConfirmations.filter(
-              (c) => c.messageId === message.id,
-            );
-            return (
-              <div key={message.id}>
-                <MessageBubble
-                  role={message.role as "user" | "assistant"}
-                  content={message.content}
-                />
-                {confirmationsForMessage.map((conf) => (
-                  <ProgressConfirmation
-                    key={`${conf.messageId}-${conf.sectionId}`}
-                    confirmation={conf}
-                    onConfirm={onConfirm}
-                  />
-                ))}
-              </div>
-            );
-          })}
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              role={message.role as "user" | "assistant"}
+              content={message.content}
+            />
+          ))}
           {isLoading && (
             <div className="flex justify-start gap-4">
               <div className="w-7 h-7 shrink-0" />

@@ -7,19 +7,9 @@ import {
   clearAll,
   getConversation,
   getMessages,
-  updateProgress,
 } from "@/lib/db/queries";
-import { parseProgressUpdates } from "@/lib/progress-detect";
 import { useChat } from "ai/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-export interface PendingConfirmation {
-  messageId: string;
-  sectionId: string;
-  sectionLabel: string;
-  status: "done";
-  detail?: string;
-}
 
 export interface UsageStats {
   promptTokens: number;
@@ -32,9 +22,6 @@ export function useClawChat(modelId: string) {
     null,
   );
   const [loaded, setLoaded] = useState(false);
-  const [pendingConfirmations, setPendingConfirmations] = useState<
-    PendingConfirmation[]
-  >([]);
   const [usage, setUsage] = useState<UsageStats>({
     promptTokens: 0,
     completionTokens: 0,
@@ -72,36 +59,8 @@ export function useClawChat(modelId: string) {
           cost: addedCost !== null ? prevCost + addedCost : prev.cost,
         };
       });
-      const { updates, cleanContent } = parseProgressUpdates(message.content);
 
-      // Save clean content (tags stripped) to Dexie
-      await addMessage("assistant", cleanContent);
-
-      // Update message in useChat state to use clean content
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === message.id ? { ...m, content: cleanContent } : m,
-        ),
-      );
-
-      // Queue confirmations for "done" updates; auto-apply "in_progress"
-      // Use message.id (useChat streaming ID) so confirmations match in MessageList
-      for (const update of updates) {
-        if (update.status === "in_progress") {
-          await updateProgress(update.sectionId, "in_progress", update.detail);
-        } else if (update.status === "done") {
-          setPendingConfirmations((prev) => [
-            ...prev,
-            {
-              messageId: message.id,
-              sectionId: update.sectionId,
-              sectionLabel: update.sectionId,
-              status: "done",
-              detail: update.detail,
-            },
-          ]);
-        }
-      }
+      await addMessage("assistant", message.content);
 
       // Check if compaction is needed
       if (!isCompacting.current) {
@@ -155,7 +114,6 @@ export function useClawChat(modelId: string) {
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!input.trim() || isLoading) return;
-      // Save user message to Dexie first
       await addMessage("user", input);
       handleSubmit(e);
     },
@@ -175,31 +133,8 @@ export function useClawChat(modelId: string) {
     await clearAll();
     setMessages([]);
     setConversationSummary(null);
-    setPendingConfirmations([]);
     setUsage({ promptTokens: 0, completionTokens: 0, cost: null });
   }, [setMessages]);
-
-  const confirmProgress = useCallback(
-    async (confirmation: PendingConfirmation, confirmed: boolean) => {
-      if (confirmed) {
-        await updateProgress(
-          confirmation.sectionId,
-          "done",
-          confirmation.detail,
-        );
-      }
-      setPendingConfirmations((prev) =>
-        prev.filter(
-          (c) =>
-            !(
-              c.messageId === confirmation.messageId &&
-              c.sectionId === confirmation.sectionId
-            ),
-        ),
-      );
-    },
-    [],
-  );
 
   return {
     messages,
@@ -209,8 +144,6 @@ export function useClawChat(modelId: string) {
     sendSuggestion,
     isLoading,
     loaded,
-    pendingConfirmations,
-    confirmProgress,
     resetAll,
     usage,
     error,

@@ -44,8 +44,6 @@ export function ChatInterface() {
     sendSuggestion,
     isLoading,
     loaded,
-    pendingConfirmations,
-    confirmProgress,
     resetAll,
     usage,
     error,
@@ -56,9 +54,6 @@ export function ChatInterface() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Progress sidebar */}
-      <ProgressSidebar />
-
       {/* Chat area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
@@ -111,8 +106,6 @@ export function ChatInterface() {
           <MessageList
             messages={messages}
             isLoading={isLoading}
-            pendingConfirmations={pendingConfirmations}
-            onConfirm={confirmProgress}
             onSuggestion={sendSuggestion}
           />
         ) : (
@@ -149,6 +142,9 @@ export function ChatInterface() {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Checkpoints sidebar */}
+      <ProgressSidebar />
     </div>
   );
 }
