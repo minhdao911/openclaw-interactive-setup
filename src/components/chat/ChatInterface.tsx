@@ -3,7 +3,11 @@
 import { ChatSidebar } from "@/components/sidebar/ChatSidebar";
 import { ProgressSidebar } from "@/components/sidebar/ProgressSidebar";
 import { useClawChat } from "@/hooks/useClawChat";
-import { clearAll, createConversation, deleteConversation } from "@/lib/db/queries";
+import {
+  clearAll,
+  createConversation,
+  deleteConversation,
+} from "@/lib/db/queries";
 import { db } from "@/lib/db/schema";
 import { useLiveQuery } from "dexie-react-hooks";
 import { X } from "lucide-react";
@@ -97,12 +101,21 @@ export function ChatInterface() {
     sendSuggestion,
     isLoading,
     loaded,
+<<<<<<< Updated upstream
     usage,
+=======
+    regenerate,
+>>>>>>> Stashed changes
     error,
     reload,
   } = useClawChat(activeConversationId ?? "", modelId);
 
-  const totalTokens = usage.promptTokens + usage.completionTokens;
+  const activeConversation = conversations?.find(
+    (c) => c.id === activeConversationId,
+  );
+  const dbTotalTokens =
+    (activeConversation?.totalPromptTokens ?? 0) +
+    (activeConversation?.totalCompletionTokens ?? 0);
 
   return (
     <div className="flex h-screen">
@@ -116,31 +129,31 @@ export function ChatInterface() {
               Your OpenClaw setup guide
             </p>
           </div>
-          {process.env.NODE_ENV === "development" && (
-            <div className="flex items-center gap-3">
-              {totalTokens > 0 && (
-                <div className="text-xs text-muted-foreground tabular-nums">
-                  {totalTokens.toLocaleString()} tokens
-                  {usage.cost !== null && (
-                    <span> · ${usage.cost.toFixed(4)}</span>
-                  )}
-                </div>
-              )}
-              <select
-                value={modelId}
-                onChange={(e) => setModelId(e.target.value)}
-                className="h-8 text-xs border border-border rounded-lg px-2 py-1 bg-background text-foreground"
-              >
-                {MODEL_GROUPS.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.models.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+          <div className="flex items-center gap-3">
+            {dbTotalTokens > 0 && (
+              <div className="text-xs text-muted-foreground tabular-nums">
+                {dbTotalTokens.toLocaleString()} tokens
+                {activeConversation?.totalCost != null && (
+                  <span> · ${activeConversation.totalCost.toFixed(4)}</span>
+                )}
+              </div>
+            )}
+            <select
+              value={modelId}
+              onChange={(e) => setModelId(e.target.value)}
+              className="h-8 text-xs border border-border rounded-lg px-2 py-1 bg-background text-foreground"
+            >
+              {MODEL_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.models.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            {process.env.NODE_ENV === "development" && (
               <Button
                 onClick={handleResetAll}
                 title="Reset current conversation (debug)"
@@ -148,8 +161,8 @@ export function ChatInterface() {
               >
                 Reset
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </header>
         <div className="flex h-full overflow-hidden bg-background">
           {/* Left: Chat sessions sidebar */}

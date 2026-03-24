@@ -8,6 +8,7 @@ import {
   getConversation,
   getMessages,
   setConversationTitle,
+  updateConversationUsage,
 } from "@/lib/db/queries";
 import { useChat } from "ai/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -48,16 +49,16 @@ export function useClawChat(conversationId: string, modelId: string) {
     body: { conversationSummary, modelId },
     onFinish: async (message, { usage: msgUsage }) => {
       const convId = conversationIdRef.current;
+      const addedCost = calcCost(
+        modelId,
+        msgUsage?.promptTokens ?? 0,
+        msgUsage?.completionTokens ?? 0,
+      );
       setUsage((prev) => {
         const newPrompt = prev.promptTokens + (msgUsage?.promptTokens ?? 0);
         const newCompletion =
           prev.completionTokens + (msgUsage?.completionTokens ?? 0);
         const prevCost = prev.cost ?? 0;
-        const addedCost = calcCost(
-          modelId,
-          msgUsage?.promptTokens ?? 0,
-          msgUsage?.completionTokens ?? 0,
-        );
         return {
           promptTokens: newPrompt,
           completionTokens: newCompletion,
@@ -66,6 +67,13 @@ export function useClawChat(conversationId: string, modelId: string) {
       });
 
       await addMessage(convId, "assistant", message.content);
+      const conv = await getConversation(convId);
+      await updateConversationUsage(
+        convId,
+        addedCost !== null ? (conv.totalCost ?? 0) + addedCost : (conv.totalCost ?? 0),
+        (conv.totalPromptTokens ?? 0) + (msgUsage?.promptTokens ?? 0),
+        (conv.totalCompletionTokens ?? 0) + (msgUsage?.completionTokens ?? 0),
+      );
 
       if (!isCompacting.current) {
         const allMessages = await getMessages(convId);

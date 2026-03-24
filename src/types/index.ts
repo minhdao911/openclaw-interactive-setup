@@ -6,6 +6,9 @@ export interface DbConversation {
   id: string
   title: string
   summary: string | null
+  totalCost: number | null
+  totalPromptTokens: number | null
+  totalCompletionTokens: number | null
   createdAt: number
   updatedAt: number
 }

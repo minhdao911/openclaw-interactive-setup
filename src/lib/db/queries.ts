@@ -8,6 +8,9 @@ export async function createConversation(): Promise<DbConversation> {
     id: nanoid(),
     title: 'New Chat',
     summary: null,
+    totalCost: null,
+    totalPromptTokens: null,
+    totalCompletionTokens: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   }
@@ -22,11 +25,23 @@ export async function getConversation(id: string): Promise<DbConversation> {
     id,
     title: 'New Chat',
     summary: null,
+    totalCost: null,
+    totalPromptTokens: null,
+    totalCompletionTokens: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   }
   await db.conversation.add(conv)
   return conv
+}
+
+export async function updateConversationUsage(
+  id: string,
+  totalCost: number,
+  totalPromptTokens: number,
+  totalCompletionTokens: number,
+): Promise<void> {
+  await db.conversation.update(id, { totalCost, totalPromptTokens, totalCompletionTokens })
 }
 
 export async function updateConversationSummary(id: string, summary: string): Promise<void> {
