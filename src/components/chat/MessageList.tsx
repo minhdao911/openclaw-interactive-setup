@@ -8,6 +8,7 @@ interface Props {
   messages: Message[];
   isLoading: boolean;
   onSuggestion: (text: string) => void;
+  onRegenerate: (messageIndex: number) => void;
 }
 
 function WelcomeMessage({
@@ -48,7 +49,7 @@ function WelcomeMessage({
   );
 }
 
-export function MessageList({ messages, isLoading, onSuggestion }: Props) {
+export function MessageList({ messages, isLoading, onSuggestion, onRegenerate }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,8 +62,13 @@ export function MessageList({ messages, isLoading, onSuggestion }: Props) {
         <WelcomeMessage onSuggestion={onSuggestion} />
       ) : (
         <div className="px-4 py-4 space-y-8">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+          {messages.map((message, index) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isLoading={isLoading}
+              onRegenerate={() => onRegenerate(index)}
+            />
           ))}
           {isLoading && (
             <div className="flex justify-start gap-4">

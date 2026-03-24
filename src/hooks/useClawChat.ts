@@ -5,6 +5,7 @@ import { runCompaction, shouldCompact } from "@/lib/compact";
 import {
   addMessage,
   clearConversation,
+  deleteMessagesById,
   getConversation,
   getMessages,
   setConversationTitle,
@@ -187,6 +188,20 @@ export function useClawChat(conversationId: string, modelId: string) {
     setUsage({ promptTokens: 0, completionTokens: 0, cost: null });
   }, [conversationId, setMessages]);
 
+  const regenerate = useCallback(
+    async (messageIndex: number) => {
+      if (isLoading) return;
+      const kept = messages.slice(0, messageIndex + 1);
+      const toDelete = messages.slice(messageIndex + 1);
+      if (toDelete.length > 0) {
+        await deleteMessagesById(toDelete.map((m) => m.id));
+      }
+      setMessages(kept);
+      reload();
+    },
+    [messages, isLoading, setMessages, reload],
+  );
+
   return {
     messages,
     input,
@@ -196,6 +211,7 @@ export function useClawChat(conversationId: string, modelId: string) {
     isLoading,
     loaded,
     resetCurrent,
+    regenerate,
     usage,
     error,
     reload,

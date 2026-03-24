@@ -95,6 +95,10 @@ export async function replaceWithCompaction(
   })
 }
 
+export async function deleteMessagesById(ids: string[]): Promise<void> {
+  await db.messages.bulkDelete(ids)
+}
+
 export async function clearConversation(id: string): Promise<void> {
   await db.transaction('rw', db.messages, db.conversation, async () => {
     await db.messages.where('conversationId').equals(id).delete()

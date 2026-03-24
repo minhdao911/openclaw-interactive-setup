@@ -101,11 +101,7 @@ export function ChatInterface() {
     sendSuggestion,
     isLoading,
     loaded,
-<<<<<<< Updated upstream
-    usage,
-=======
     regenerate,
->>>>>>> Stashed changes
     error,
     reload,
   } = useClawChat(activeConversationId ?? "", modelId);
@@ -181,6 +177,7 @@ export function ChatInterface() {
                 messages={messages}
                 isLoading={isLoading}
                 onSuggestion={sendSuggestion}
+                onRegenerate={regenerate}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center">
