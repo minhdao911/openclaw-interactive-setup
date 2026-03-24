@@ -668,9 +668,21 @@ You cannot proceed without confirming this.
 
 ---
 
-#### Step 1 — Reset Handling (if existing config detected)
+#### Step 1 — Config Handling (if existing config detected)
 
-If a config already exists, the wizard asks what to reset before continuing:
+If a config already exists, the wizard shows an **"Existing config detected"** panel with a summary of key settings (API keys, channels, etc.). If it says **"No key settings detected"**, the existing config is empty or minimal — nothing meaningful to preserve.
+
+Then a **"Config handling"** prompt offers three options:
+
+| Option                  | What it does                                                               | When to choose                                                                 |
+| ----------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Use existing values** | Keeps current `openclaw.json` and skips reconfiguring already-set values   | You already configured things manually and want to keep them                   |
+| **Update values**       | Walks through the wizard but lets you selectively change specific settings | You want to tweak a few settings without losing everything                     |
+| **Reset**               | Wipes and starts fresh — opens a follow-up prompt to choose reset scope   | First real setup, or "No key settings detected" — nothing worth keeping        |
+
+> **Recommendation:** If the panel says "No key settings detected", choose **Reset** for a clean slate. If you've already configured API keys or channels and want to keep them, choose **Use existing values** or **Update values**.
+
+##### Reset Scope (shown after choosing Reset)
 
 | Option                              | What it clears                                                             |
 | ----------------------------------- | -------------------------------------------------------------------------- |
@@ -788,6 +800,17 @@ Controls how clients authenticate to the gateway.
 | **Password**          | User-defined password credential | Required if using Tailscale Funnel mode   |
 
 For token mode, the wizard can either auto-generate a token or let you provide your own.
+
+##### Token Storage (shown after choosing Token auth)
+
+After selecting Token auth mode, the wizard asks how to store the gateway token:
+
+| Option                                        | How it works                                                                          | Best for                                  |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Generate/store plaintext token** _(default)_ | Auto-generates a token and saves it directly in `openclaw.json`                       | Simple local setups, single-user machines |
+| **Use SecretRef**                              | Stores a reference like `env:OPENCLAW_GATEWAY_TOKEN` — resolved at runtime from env vars | VPS/server setups, shared machines, CI/CD |
+
+> **Recommendation:** Use **plaintext** (default) for personal machines and local development. Use **SecretRef** if you're on a shared server, running in Docker/CI, or don't want secrets in the config file. SecretRef format: `source:provider:id` — e.g. `env:system:OPENCLAW_GATEWAY_TOKEN`.
 
 ---
 
@@ -3051,6 +3074,28 @@ openclaw dashboard --no-open
 ```
 
 Keep the tunnel terminal open for the duration of your session.
+
+---
+
+#### Dashboard shows "pairing required" after clicking Connect
+
+**Symptom:** The Control UI loads and you can see the WebSocket URL and Gateway Token fields, but after clicking "Connect" it shows "pairing required" instead of connecting.
+
+**Cause:** The dashboard web client is treated as a new device that needs to be approved (paired) on the gateway side. This is part of OpenClaw's security model — new devices must be explicitly approved before they can interact with the gateway.
+
+**Fix:** Approve the pending device pairing from the CLI:
+
+```bash
+# List pending device pairing requests
+openclaw devices list
+
+# Approve the most recent pairing request
+openclaw devices approve --latest
+```
+
+After approving, click "Connect" again in the dashboard — it should connect successfully and show the main chat interface.
+
+> **Note:** This is different from channel pairing (e.g. Telegram/Discord DM pairing). Device pairing applies to any new client connecting to the gateway, including the web dashboard.
 
 ---
 
