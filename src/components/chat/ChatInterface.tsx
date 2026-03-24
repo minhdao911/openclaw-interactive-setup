@@ -199,7 +199,7 @@ export function ChatInterface() {
             <MessageInput
               input={input}
               onChange={handleInputChange}
-              onSubmit={submitMessage}
+              onSubmit={(e, files) => submitMessage(e, files)}
               isLoading={isLoading}
             />
           </div>

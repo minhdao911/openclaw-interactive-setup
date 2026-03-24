@@ -122,15 +122,39 @@ export function useClawChat(conversationId: string, modelId: string) {
   }, [conversationId, setMessages]);
 
   const submitMessage = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.SyntheticEvent, imageFiles: File[] = []) => {
       e.preventDefault();
-      if (!input.trim() || isLoading) return;
+      if ((!input.trim() && imageFiles.length === 0) || isLoading) return;
       const isFirstMessage = messages.length === 0;
       await addMessage(conversationId, "user", input);
       if (isFirstMessage) {
-        await setConversationTitle(conversationId, input.trim().slice(0, 60));
+        const title = input.trim() || "Image message";
+        await setConversationTitle(conversationId, title.slice(0, 60));
       }
-      handleSubmit(e);
+      if (imageFiles.length > 0) {
+        const attachments = await Promise.all(
+          imageFiles.map(
+            (file) =>
+              new Promise<{ name: string; contentType: string; url: string }>(
+                (resolve) => {
+                  const reader = new FileReader();
+                  reader.onload = () =>
+                    resolve({
+                      name: file.name,
+                      contentType: file.type,
+                      url: reader.result as string,
+                    });
+                  reader.readAsDataURL(file);
+                },
+              ),
+          ),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        handleSubmit(e as any, { experimental_attachments: attachments });
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        handleSubmit(e as any);
+      }
     },
     [conversationId, input, isLoading, handleSubmit, messages.length],
   );

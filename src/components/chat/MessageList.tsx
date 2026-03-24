@@ -62,11 +62,7 @@ export function MessageList({ messages, isLoading, onSuggestion }: Props) {
       ) : (
         <div className="px-4 py-4 space-y-8">
           {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              role={message.role as "user" | "assistant"}
-              content={message.content}
-            />
+            <MessageBubble key={message.id} message={message} />
           ))}
           {isLoading && (
             <div className="flex justify-start gap-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { Message } from "ai";
 import { Bot, Check, Copy } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -27,12 +28,14 @@ function CopyButton({ text }: { text: string }) {
 }
 
 interface Props {
-  role: "user" | "assistant";
-  content: string;
+  message: Message;
 }
 
-export function MessageBubble({ role, content }: Props) {
-  const isUser = role === "user";
+export function MessageBubble({ message }: Props) {
+  const isUser = message.role === "user";
+  const imageAttachments = (message.experimental_attachments ?? []).filter((a) =>
+    a.contentType?.startsWith("image/"),
+  );
 
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
@@ -49,7 +52,24 @@ export function MessageBubble({ role, content }: Props) {
         )}
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap">{content}</p>
+          <div className="space-y-2">
+            {imageAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {imageAttachments.map((att, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={att.url}
+                    alt={att.name ?? `image ${i + 1}`}
+                    className="max-w-[200px] max-h-[200px] rounded-lg object-cover"
+                  />
+                ))}
+              </div>
+            )}
+            {message.content && (
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            )}
+          </div>
         ) : (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -133,7 +153,7 @@ export function MessageBubble({ role, content }: Props) {
               ),
             }}
           >
-            {content}
+            {message.content}
           </ReactMarkdown>
         )}
       </div>
