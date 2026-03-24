@@ -26,7 +26,10 @@ const MODEL_GROUPS = [
   },
   {
     label: "DeepSeek",
-    models: [{ id: "deepseek-chat", label: "DeepSeek V3.2" }],
+    models: [
+      { id: "deepseek-chat", label: "DeepSeek V3.2" },
+      { id: "deepseek-reasoner", label: "DeepSeek V3.2 Thinking" },
+    ],
   },
 ];
 
