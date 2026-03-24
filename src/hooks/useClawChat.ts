@@ -50,6 +50,8 @@ export function useClawChat(modelId: string) {
     isLoading,
     setMessages,
     append,
+    error,
+    reload,
   } = useChat({
     api: "/api/chat",
     body: { conversationSummary, modelId },
@@ -211,5 +213,7 @@ export function useClawChat(modelId: string) {
     confirmProgress,
     resetAll,
     usage,
+    error,
+    reload,
   };
 }

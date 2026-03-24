@@ -2,6 +2,7 @@
 
 import { ProgressSidebar } from "@/components/sidebar/ProgressSidebar";
 import { useClawChat } from "@/hooks/useClawChat";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { MessageInput } from "./MessageInput";
@@ -31,6 +32,7 @@ const MODEL_GROUPS = [
 
 export function ChatInterface() {
   const [modelId, setModelId] = useState(MODEL_GROUPS[0].models[0].id);
+  const [dismissedError, setDismissedError] = useState<Error | null>(null);
   const {
     messages,
     input,
@@ -43,6 +45,8 @@ export function ChatInterface() {
     confirmProgress,
     resetAll,
     usage,
+    error,
+    reload,
   } = useClawChat(modelId);
 
   const totalTokens = usage.promptTokens + usage.completionTokens;
@@ -111,6 +115,26 @@ export function ChatInterface() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-sm text-muted-foreground">Loading…</div>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {error && error !== dismissedError && (
+          <div className="flex items-center gap-3 px-4 py-3 mx-4 mb-2 rounded-lg border border-destructive/50 bg-destructive/10 text-sm">
+            <span className="flex-1 min-w-0 truncate text-destructive">
+              {error.message}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => reload()}>
+              Try again
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDismissedError(error)}
+              className="p-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+            >
+              <X className="size-3" />
+            </Button>
           </div>
         )}
 

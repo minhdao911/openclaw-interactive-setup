@@ -21,7 +21,16 @@ export async function POST(req: Request) {
       anthropic: { cacheControl: { type: "ephemeral" } },
       deepseek: { cacheControl: { type: "ephemeral" } },
     },
+    onError: (error) => {
+      console.error("[chat/route] streamText error:", error);
+    },
   });
 
-  return result.toDataStreamResponse();
+  return result.toDataStreamResponse({
+    getErrorMessage: (error) => {
+      console.error("[chat/route] stream error:", error);
+      if (error instanceof Error) return error.message;
+      return "An unexpected error occurred.";
+    },
+  });
 }
