@@ -10,6 +10,7 @@
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Installation](#installation)
+- [Uninstallation](#uninstallation)
 - [Onboarding Wizard (`openclaw onboard`)](#onboarding-wizard-openclaw-onboard)
 - [Configuration](#configuration)
 - [Channels](#channels)
@@ -356,6 +357,70 @@ pnpm build
 pnpm link --global
 openclaw onboard --install-daemon
 ```
+
+---
+
+## Uninstallation
+
+> **Source:** https://docs.openclaw.ai/install/uninstall
+
+### Quick Uninstall (CLI)
+
+```bash
+openclaw uninstall
+```
+
+For automated/non-interactive environments:
+
+```bash
+openclaw uninstall --all --yes --non-interactive
+# Or via npx if the global CLI is broken:
+npx -y openclaw uninstall --all --yes --non-interactive
+```
+
+### Manual Uninstall Steps
+
+If the CLI is unavailable or you prefer manual removal:
+
+1. **Stop the service:** `openclaw gateway stop`
+2. **Uninstall the service:** `openclaw gateway uninstall`
+3. **Delete configuration:** `rm -rf "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}"`
+4. **Remove workspace (optional):** `rm -rf ~/.openclaw/workspace`
+5. **Uninstall CLI** (pick your package manager):
+   - `npm rm -g openclaw`
+   - `pnpm remove -g openclaw`
+   - `bun remove -g openclaw`
+6. **macOS app removal (if applicable):** `rm -rf /Applications/OpenClaw.app`
+
+### Platform-Specific Service Removal
+
+**macOS (launchd):**
+
+```bash
+launchctl bootout gui/$UID/ai.openclaw.gateway
+rm -f ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+```
+
+**Linux (systemd):**
+
+```bash
+systemctl --user disable --now openclaw-gateway.service
+rm -f ~/.config/systemd/user/openclaw-gateway.service
+systemctl --user daemon-reload
+```
+
+**Windows (Scheduled Task):**
+
+```powershell
+schtasks /Delete /F /TN "OpenClaw Gateway"
+Remove-Item -Force "$env:USERPROFILE\.openclaw\gateway.cmd"
+```
+
+### Additional Notes
+
+- **Profiles:** repeat the state directory deletion for each profile (`~/.openclaw-<profile>`)
+- **Remote setups:** perform steps 1–4 on the gateway host
+- **Source installations:** uninstall the service before deleting the cloned repository
 
 ---
 
