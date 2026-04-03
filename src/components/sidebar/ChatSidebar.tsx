@@ -13,7 +13,6 @@ interface Props {
 }
 
 function groupByDate(conversations: DbConversation[]) {
-  const now = Date.now();
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const todayMs = startOfToday.getTime();

@@ -8,10 +8,11 @@ const anthropic = createAnthropic({
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  compatibility: "strict",
 });
 
 const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 const deepseek = createOpenAI({
@@ -19,7 +20,7 @@ const deepseek = createOpenAI({
   baseURL: "https://api.deepseek.com/v1",
 });
 
-export const DEFAULT_MODEL_ID = "claude-haiku-4-5-20251001";
+export const DEFAULT_MODEL_ID = "deepseek-chat";
 
 // Cost per 1M tokens [input, output] in USD. null = unknown pricing.
 export const MODEL_PRICING: Record<string, [number, number] | null> = {

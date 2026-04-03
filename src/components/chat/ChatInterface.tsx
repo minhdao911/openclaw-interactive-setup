@@ -12,6 +12,7 @@ import { db } from "@/lib/db/schema";
 import { useLiveQuery } from "dexie-react-hooks";
 import { X } from "lucide-react";
 
+import { DEFAULT_MODEL_ID } from "@/lib/ai/provider";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { MessageInput } from "./MessageInput";
@@ -35,15 +36,12 @@ const MODEL_GROUPS = [
   },
   {
     label: "DeepSeek",
-    models: [
-      { id: "deepseek-chat", label: "DeepSeek V3.2" },
-      { id: "deepseek-reasoner", label: "DeepSeek V3.2 Thinking" },
-    ],
+    models: [{ id: "deepseek-chat", label: "DeepSeek V3.2" }],
   },
 ];
 
 export function ChatInterface() {
-  const [modelId, setModelId] = useState(MODEL_GROUPS[0].models[0].id);
+  const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState<Error | null>(null);
 
