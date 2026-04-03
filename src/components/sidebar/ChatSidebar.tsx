@@ -4,6 +4,7 @@ import { db } from "@/lib/db/schema";
 import type { DbConversation } from "@/types";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus, Trash2 } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface Props {
   activeId: string;
@@ -45,13 +46,10 @@ export function ChatSidebar({ activeId, onSelect, onCreate, onDelete }: Props) {
     <aside className="w-64 shrink-0 flex flex-col h-full border-r border-border bg-muted/30">
       {/* New Chat button */}
       <div className="p-3 shrink-0">
-        <button
-          onClick={onCreate}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-foreground text-background text-sm font-medium py-2.5 px-4 hover:opacity-90 transition-opacity"
-        >
+        <Button size="lg" onClick={onCreate} className="w-full">
           <Plus className="size-4" />
           New Chat
-        </button>
+        </Button>
       </div>
 
       {/* Conversation list */}
@@ -74,15 +72,17 @@ export function ChatSidebar({ activeId, onSelect, onCreate, onDelete }: Props) {
                 <span className="flex-1 min-w-0 truncate">
                   {conv.title || "New Chat"}
                 </span>
-                <button
-                  className="opacity-0 group-hover:opacity-100 shrink-0 p-0.5 rounded hover:text-destructive transition-opacity"
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(conv.id);
                   }}
+                  className="hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Trash2 className="size-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
