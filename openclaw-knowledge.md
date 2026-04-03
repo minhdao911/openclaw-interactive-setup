@@ -3209,6 +3209,58 @@ ollama serve &
 | **Skill pruning** | Each skill adds ~97 chars to context — remove unused ones | `openclaw skills` |
 | **Light context cron jobs** | Skip workspace bootstrap for routine scheduled tasks | `--light-context` flag |
 | **OpenRouter free tier** | Free models for non-critical fallback tasks | `openclaw models scan` |
+| **LiteLLM proxy** | Cache deterministic calls, rate-limit, auto-failover | Docker sidecar between Gateway and providers |
+| **Session isolation** | Prevent history accumulation on automation tasks | `--session isolated` on cron jobs |
+| **Budget monitoring** | Track spend per session, set alert thresholds | `session_status` API + daily cron aggregation |
+| **Concurrency cap** | Smooth rate-limit exposure and cost spikes | `maxConcurrentRuns` in Gateway config |
+
+---
+
+### Cost Drivers
+
+Understanding where tokens go helps prioritize optimizations:
+
+| Driver | Impact | Notes |
+|--------|--------|-------|
+| **Model selection** | Up to **50× price difference** between budget and premium models | Biggest lever — tier ruthlessly |
+| **Session history** | Full history re-sent every turn | Long sessions compound cost; use compaction or `--session isolated` for automation |
+| **Unlimited concurrency** | Parallel agents multiply spend linearly | Cap with `maxConcurrentRuns` |
+| **Multi-agent coordination** | ~**3.5× token multiplier** vs. single-agent | Coordinators should compress task briefings; use tool allowlists to trim context |
+
+### Model Tiering
+
+Route tasks to the cheapest model that can handle them:
+
+| Tier | Price range (input) | Models | Use for |
+|------|-------------------|--------|---------|
+| **Free** | $0 | Ollama (Qwen 2.5, Llama 3.2, Mistral), Google AI Studio free tier | Heartbeats, simple cron jobs, local dev |
+| **Budget** | $0.10–$0.50/M tokens | Gemini 1.5 Flash, Claude Haiku | Classification, simple tasks, routine automation |
+| **Mid** | $1–$5/M tokens | Claude Sonnet, GPT-4o Mini | Reasoning tasks, code review |
+| **Premium** | $10+/M tokens | Claude Opus, GPT-4 | Complex code generation, difficult reasoning — use sparingly |
+
+Config example for tiered defaults:
+```yaml
+agents:
+  defaults:
+    models:
+      - "google/gemini-1.5-flash-latest"    # budget default
+      - "anthropic/claude-3-5-sonnet-20241022"  # escalation
+```
+
+For cron jobs, pin to budget: `--model google/gemini-1.5-flash-latest --session isolated`
+
+---
+
+### LiteLLM API Proxy
+
+Insert a LiteLLM proxy between the Gateway and API providers to get:
+
+- **Prompt caching** for deterministic calls (heartbeats, routine checks) — **70–90% cost reduction** on repetitive tasks
+- **Rate limiting** and concurrency management
+- **Fallback routing** — automatic failover between providers
+- **Usage tracking** across all providers in one place
+
+Run as a Docker sidecar alongside the Gateway. Point OpenClaw's API base URL at the proxy instead of directly at providers.
 
 ---
 
@@ -3359,11 +3411,37 @@ These models run on Ollama's infrastructure. They may have usage limits but don'
 
 ---
 
+### Session & Context Management
+
+Long sessions are a hidden cost driver — full history re-sends on every turn. Strategies:
+
+- **Aggressive compaction:** reduces token count but loses detail — acceptable for non-critical sessions
+- **Session resets:** use `--session isolated` for cron jobs and automation to start fresh each run
+- **Multi-agent briefings:** coordinators should compress task briefings to minimize input tokens per delegation
+- **Tool allowlists:** reduce unused tool definitions per agent to trim context size
+
+### Budget Monitoring
+
+Track spend and set alerts before costs surprise you:
+
+- **`session_status` API:** returns token counts and estimated cost per session — poll this programmatically
+- **Daily aggregation cron:** collect session costs into a daily summary, store alert thresholds in MEMORY.md
+- **`maxConcurrentRuns`:** set in Gateway config to cap parallel agent runs, smoothing rate-limit exposure and cost spikes
+
 ### Other Strategies
 
 - **Limit context window:** keep MEMORY.md concise; use `lightContext: true` for cron jobs that don't need full workspace
 - **Cron job frequency:** isolated cron jobs spin up full agent turns; prefer less frequent schedules for expensive tasks
 - **Task batching:** group similar tasks into a single message — never make multiple separate API calls when one will do
+
+### Community Cost Benchmarks
+
+Reported results from the OpenClaw community:
+- **80–95% cost reduction** when tiering models properly and moving automation to budget/free models
+- **Realistic minimum savings:** ~20% with basic model routing
+- **Optimization-heavy setups** (LiteLLM proxy + Ollama heartbeats + tiering + session isolation): **50%+ reduction**
+
+> Source: [LumaDock — OpenClaw Cost Optimization & Budgeting](https://lumadock.com/tutorials/openclaw-cost-optimization-budgeting)
 
 ---
 
