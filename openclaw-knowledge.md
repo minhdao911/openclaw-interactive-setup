@@ -378,11 +378,11 @@ docker run -it -p 18789:18789 -v ~/.openclaw:/home/node/.openclaw alpine/opencla
 
 **Available image tags:**
 
-| Tag       | Description                                  |
-| --------- | -------------------------------------------- |
-| `latest`  | Current stable build (updated daily)         |
-| `vX.Y.Z`  | Specific version releases                    |
-| `main`    | Cutting-edge branch version                  |
+| Tag      | Description                          |
+| -------- | ------------------------------------ |
+| `latest` | Current stable build (updated daily) |
+| `vX.Y.Z` | Specific version releases            |
+| `main`   | Cutting-edge branch version          |
 
 You can also use this image with the official setup script by setting `OPENCLAW_IMAGE`:
 
@@ -414,10 +414,10 @@ The install script handles prerequisites checking, image pulling, onboarding, an
 
 Compose binds these paths for persistence:
 
-| Host path (configurable)       | Container path                    | Purpose                          |
-| ------------------------------ | --------------------------------- | -------------------------------- |
-| `OPENCLAW_CONFIG_DIR`          | `/home/node/.openclaw`            | Config, credentials, sessions    |
-| `OPENCLAW_WORKSPACE_DIR`      | `/home/node/.openclaw/workspace`  | Agent files (SOUL.md, MEMORY.md) |
+| Host path (configurable) | Container path                   | Purpose                          |
+| ------------------------ | -------------------------------- | -------------------------------- |
+| `OPENCLAW_CONFIG_DIR`    | `/home/node/.openclaw`           | Config, credentials, sessions    |
+| `OPENCLAW_WORKSPACE_DIR` | `/home/node/.openclaw/workspace` | Agent files (SOUL.md, MEMORY.md) |
 
 Configuration persists in `~/.openclaw/` across container restarts.
 
@@ -425,15 +425,15 @@ Configuration persists in `~/.openclaw/` across container restarts.
 
 #### Key Environment Variables
 
-| Variable                  | Purpose                                             |
-| ------------------------- | --------------------------------------------------- |
-| `OPENCLAW_IMAGE`          | Specify remote image instead of local build         |
-| `OPENCLAW_EXTENSIONS`     | Pre-install extension dependencies                  |
-| `OPENCLAW_EXTRA_MOUNTS`   | Add host bind mounts (comma-separated)              |
-| `OPENCLAW_HOME_VOLUME`    | Persist `/home/node` in a named volume              |
-| `OPENCLAW_SANDBOX`        | Enable agent sandbox (`1`, `true`, `yes`, `on`)     |
-| `OPENCLAW_DOCKER_SOCKET`  | Override Docker socket path                         |
-| `OPENCLAW_GATEWAY_BIND`   | Set to `lan` for host access to published ports     |
+| Variable                 | Purpose                                         |
+| ------------------------ | ----------------------------------------------- |
+| `OPENCLAW_IMAGE`         | Specify remote image instead of local build     |
+| `OPENCLAW_EXTENSIONS`    | Pre-install extension dependencies              |
+| `OPENCLAW_EXTRA_MOUNTS`  | Add host bind mounts (comma-separated)          |
+| `OPENCLAW_HOME_VOLUME`   | Persist `/home/node` in a named volume          |
+| `OPENCLAW_SANDBOX`       | Enable agent sandbox (`1`, `true`, `yes`, `on`) |
+| `OPENCLAW_DOCKER_SOCKET` | Override Docker socket path                     |
+| `OPENCLAW_GATEWAY_BIND`  | Set to `lan` for host access to published ports |
 
 #### Channel Setup (Docker)
 
@@ -478,7 +478,7 @@ Config equivalent:
     defaults: {
       sandbox: {
         mode: "non-main", // off | non-main | all
-        scope: "agent",   // session | agent | shared
+        scope: "agent", // session | agent | shared
       },
     },
   },
@@ -613,14 +613,14 @@ At the start of the wizard (after the risk acknowledgment), you choose your onbo
 
 **Which one should you choose?**
 
-| Environment | Recommendation | Why |
-| --- | --- | --- |
-| **Local Mac/Linux (personal use, same machine)** | **Quickstart** | Loopback bind is fine — everything runs on one box. No network config needed. |
-| **VPS / remote server** | **Manual** | You need **LAN bind** (`0.0.0.0`) so the gateway is reachable from other machines or through SSH tunnels. Quickstart locks you to loopback. |
-| **macOS VM (Lume)** | **Manual** | The VM has its own network interface. You need **LAN bind** so the host Mac can reach the gateway (via SSH tunnel or direct IP). |
-| **Docker (remote host)** | **Manual** | Container networking requires **LAN bind** for published ports to work. Set `OPENCLAW_GATEWAY_BIND=lan` or configure bind in the wizard. |
-| **Tailscale mesh** | **Manual** | Lets you pick Tailnet bind or Funnel exposure — not available in Quickstart. |
-| **Multi-user / shared setup** | **Manual** | Allows password auth, custom port, and explicit security choices. |
+| Environment                                      | Recommendation | Why                                                                                                                                         |
+| ------------------------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Local Mac/Linux (personal use, same machine)** | **Quickstart** | Loopback bind is fine — everything runs on one box. No network config needed.                                                               |
+| **VPS / remote server**                          | **Manual**     | You need **LAN bind** (`0.0.0.0`) so the gateway is reachable from other machines or through SSH tunnels. Quickstart locks you to loopback. |
+| **macOS VM (Lume)**                              | **Manual**     | The VM has its own network interface. You need **LAN bind** so the host Mac can reach the gateway (via SSH tunnel or direct IP).            |
+| **Docker (remote host)**                         | **Manual**     | Container networking requires **LAN bind** for published ports to work. Set `OPENCLAW_GATEWAY_BIND=lan` or configure bind in the wizard.    |
+| **Tailscale mesh**                               | **Manual**     | Lets you pick Tailnet bind or Funnel exposure — not available in Quickstart.                                                                |
+| **Multi-user / shared setup**                    | **Manual**     | Allows password auth, custom port, and explicit security choices.                                                                           |
 
 > **Rule of thumb:** If OpenClaw and everything that talks to it (browser, messaging clients) are on the **same machine**, Quickstart is fine. If **anything needs to reach the gateway over the network** (VPS, VM, Docker, remote access), choose **Manual** and set bind to **LAN**.
 
@@ -634,7 +634,7 @@ At the start of the wizard (after the risk acknowledgment), you choose your onbo
 
 ### Step-by-Step: Manual Flow
 
-> ⚠️ **Actual step order from live wizard run** — differs from earlier documentation. Workspace and model provider steps come *before* gateway network settings.
+> ⚠️ **Actual step order from live wizard run** — differs from earlier documentation. Workspace and model provider steps come _before_ gateway network settings.
 
 #### Step 0 — Risk Acknowledgment
 
@@ -651,6 +651,7 @@ Key warnings it covers (actual wizard text):
 - "If you're not comfortable with security hardening and access control, don't run OpenClaw."
 
 Recommended baseline (shown in wizard):
+
 - Pairing/allowlists + mention gating
 - Multi-user/shared inbox: split trust boundaries (separate gateway/credentials, ideally separate OS users/hosts)
 - Sandbox + least-privilege tools
@@ -659,6 +660,7 @@ Recommended baseline (shown in wizard):
 - Use the strongest available model for any bot with tools or untrusted inboxes
 
 Commands surfaced here:
+
 ```bash
 openclaw security audit --deep
 openclaw security audit --fix    # ⚠️ new — not in earlier docs
@@ -674,11 +676,11 @@ If a config already exists, the wizard shows an **"Existing config detected"** p
 
 Then a **"Config handling"** prompt offers three options:
 
-| Option                  | What it does                                                               | When to choose                                                                 |
-| ----------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Use existing values** | Keeps current `openclaw.json` and skips reconfiguring already-set values   | You already configured things manually and want to keep them                   |
-| **Update values**       | Walks through the wizard but lets you selectively change specific settings | You want to tweak a few settings without losing everything                     |
-| **Reset**               | Wipes and starts fresh — opens a follow-up prompt to choose reset scope   | First real setup, or "No key settings detected" — nothing worth keeping        |
+| Option                  | What it does                                                               | When to choose                                                          |
+| ----------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Use existing values** | Keeps current `openclaw.json` and skips reconfiguring already-set values   | You already configured things manually and want to keep them            |
+| **Update values**       | Walks through the wizard but lets you selectively change specific settings | You want to tweak a few settings without losing everything              |
+| **Reset**               | Wipes and starts fresh — opens a follow-up prompt to choose reset scope    | First real setup, or "No key settings detected" — nothing worth keeping |
 
 > **Recommendation:** If the panel says "No key settings detected", choose **Reset** for a clean slate. If you've already configured API keys or channels and want to keep them, choose **Use existing values** or **Update values**.
 
@@ -709,7 +711,7 @@ For most setups, choose **Local**.
 
 #### Step 3 — Workspace Directory
 
-> ⚠️ **Actual order:** Workspace comes *before* gateway network settings in the live wizard (not after as earlier docs suggested).
+> ⚠️ **Actual order:** Workspace comes _before_ gateway network settings in the live wizard (not after as earlier docs suggested).
 
 Sets the directory where OpenClaw stores agent files (SOUL.md, MEMORY.md, skills, etc.).
 
@@ -776,13 +778,13 @@ Set the port the gateway listens on.
 
 Controls which network interfaces the gateway accepts connections from.
 
-| Option       | Binds to                | When to use                                                                                                                                          |
-| ------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Loopback** | `127.0.0.1`             | Gateway only reachable from the same machine. Works well when you access the dashboard via SSH tunnel, or when everything runs on one local box.     |
-| **LAN**      | `0.0.0.0`               | Gateway listens on all interfaces. Required for VPS or any setup where the dashboard or API needs to be reachable from another machine on the network. |
+| Option       | Binds to                | When to use                                                                                                                                              |
+| ------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Loopback** | `127.0.0.1`             | Gateway only reachable from the same machine. Works well when you access the dashboard via SSH tunnel, or when everything runs on one local box.         |
+| **LAN**      | `0.0.0.0`               | Gateway listens on all interfaces. Required for VPS or any setup where the dashboard or API needs to be reachable from another machine on the network.   |
 | **Tailnet**  | Tailscale IP            | Exposes the gateway only on your private Tailscale mesh. Good if you use Tailscale to connect between machines without opening anything to the internet. |
-| **Auto**     | Loopback → LAN fallback | Tries loopback first; falls back to LAN if that fails. Low-friction option if you're unsure.                                                         |
-| **Custom**   | User-specified IPv4     | Bind to a specific IP on a multi-homed machine.                                                                                                      |
+| **Auto**     | Loopback → LAN fallback | Tries loopback first; falls back to LAN if that fails. Low-friction option if you're unsure.                                                             |
+| **Custom**   | User-specified IPv4     | Bind to a specific IP on a multi-homed machine.                                                                                                          |
 
 > ⚠️ **Tailscale constraint:** Selecting Tailnet forces `bind=loopback` internally — Tailscale handles the network exposure layer.
 
@@ -805,9 +807,9 @@ For token mode, the wizard can either auto-generate a token or let you provide y
 
 After selecting Token auth mode, the wizard asks how to store the gateway token:
 
-| Option                                        | How it works                                                                          | Best for                                  |
-| --------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **Generate/store plaintext token** _(default)_ | Auto-generates a token and saves it directly in `openclaw.json`                       | Simple local setups, single-user machines |
+| Option                                         | How it works                                                                             | Best for                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Generate/store plaintext token** _(default)_ | Auto-generates a token and saves it directly in `openclaw.json`                          | Simple local setups, single-user machines |
 | **Use SecretRef**                              | Stores a reference like `env:OPENCLAW_GATEWAY_TOKEN` — resolved at runtime from env vars | VPS/server setups, shared machines, CI/CD |
 
 > **Recommendation:** Use **plaintext** (default) for personal machines and local development. Use **SecretRef** if you're on a shared server, running in Docker/CI, or don't want secrets in the config file. SecretRef format: `source:provider:id` — e.g. `env:system:OPENCLAW_GATEWAY_TOKEN`.
@@ -833,12 +835,14 @@ The wizard also asks whether to **reset Tailscale config on exit** — useful du
 #### Step 10 — Channel Setup
 
 The wizard shows a **channel status panel** listing all channels and their current state before asking if you want to configure them now. The panel distinguishes:
+
 - Built-in channels: Telegram, WhatsApp, Discord, Slack, Signal, iMessage, IRC, Google Chat, LINE
 - Plugin channels (require separate install): Feishu/Lark, Nostr, Microsoft Teams, Mattermost, Nextcloud Talk, Matrix, BlueBubbles, Zalo, Zalo Personal, Synology Chat, Tlon
 
 Then a **"How channels work"** info panel is shown before letting you select a channel to configure. You can configure multiple channels in sequence, then select "Finished".
 
 Each channel has its own auth flow and DM policy configuration. After channel selection, the wizard asks:
+
 1. Whether to configure DM access policies now (default: pairing)
 2. The DM policy for that channel (Pairing recommended)
 
@@ -880,15 +884,16 @@ Option: "Skip for now" is available.
 #### Step 14 — Gateway Service Runtime + Daemon Installation
 
 First selects the runtime:
+
 - **Node** (recommended)
 - Other options may be available
 
 Then installs OpenClaw as a persistent background service so it starts automatically.
 
-| Platform | Service type         | Path                                                              |
-| -------- | -------------------- | ----------------------------------------------------------------- |
-| macOS    | LaunchAgent          | `~/Library/LaunchAgents/ai.openclaw.gateway.plist`                |
-| Linux    | systemd user service | systemd user service                                              |
+| Platform | Service type         | Path                                               |
+| -------- | -------------------- | -------------------------------------------------- |
+| macOS    | LaunchAgent          | `~/Library/LaunchAgents/ai.openclaw.gateway.plist` |
+| Linux    | systemd user service | systemd user service                               |
 
 Logs: `~/.openclaw/logs/gateway.log`
 
@@ -909,6 +914,7 @@ If a daemon is already installed, you're offered:
 The wizard verifies the gateway is reachable and channel connections are working. It shows per-channel status, e.g. "Discord: ok (@Ken) (1059ms)".
 
 Also shows:
+
 - Agents configured (e.g. "Agents: main (default)")
 - **Heartbeat interval** — default observed in live run: **30m (main)** (not 55m as in cost optimization docs — that 55m is a recommended override for cache warming, not the out-of-box default)
 - Session store path + entry count
@@ -1123,17 +1129,18 @@ The config file is JSON5 format (comments and trailing commas are fine).
 ### Editing the Config File
 
 **Option A — nano (terminal):**
+
 ```bash
 nano ~/.openclaw/openclaw.json
 ```
 
-| Action | Keys |
-|--------|------|
-| Save | `Ctrl+O` then `Enter` |
-| Exit | `Ctrl+X` |
+| Action        | Keys                          |
+| ------------- | ----------------------------- |
+| Save          | `Ctrl+O` then `Enter`         |
+| Exit          | `Ctrl+X`                      |
 | Save and exit | `Ctrl+O` → `Enter` → `Ctrl+X` |
-| Undo | `Alt+U` |
-| Jump to line | `Ctrl+_` then type number |
+| Undo          | `Alt+U`                       |
+| Jump to line  | `Ctrl+_` then type number     |
 
 **Option B — VS Code Remote SSH (recommended for longer edits):**
 
@@ -1722,24 +1729,24 @@ OpenClaw uses a **markdown-first, file-based memory system**. All memory lives a
 
 ### Memory Architecture — Four Layers
 
-| Layer | What it is | Survives compaction? |
-|-------|-----------|---------------------|
-| **Bootstrap Files** (SOUL.md, USER.md, MEMORY.md, TOOLS.md, AGENTS.md) | Injected at every session start from disk | ✅ Yes — reloads from disk |
-| **Session Transcript** (JSONL on disk) | Conversation history at `~/.openclaw/agents/<agentId>/sessions/*.jsonl` | ⚠️ Compacted — summary replaces detailed history (lossy) |
-| **LLM Context Window** (in-memory) | The fixed ~200K token container where all content competes | ❌ Temporary — cleared on session end |
-| **Retrieval Index** (SQLite + embeddings) | Searchable layer — vector + keyword (BM25) hybrid search | ✅ Yes — rebuilt from files |
+| Layer                                                                  | What it is                                                              | Survives compaction?                                     |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| **Bootstrap Files** (SOUL.md, USER.md, MEMORY.md, TOOLS.md, AGENTS.md) | Injected at every session start from disk                               | ✅ Yes — reloads from disk                               |
+| **Session Transcript** (JSONL on disk)                                 | Conversation history at `~/.openclaw/agents/<agentId>/sessions/*.jsonl` | ⚠️ Compacted — summary replaces detailed history (lossy) |
+| **LLM Context Window** (in-memory)                                     | The fixed ~200K token container where all content competes              | ❌ Temporary — cleared on session end                    |
+| **Retrieval Index** (SQLite + embeddings)                              | Searchable layer — vector + keyword (BM25) hybrid search                | ✅ Yes — rebuilt from files                              |
 
 > **Golden rule:** "If it's not written to a file, it doesn't exist." Chat-only instructions disappear on compaction or session end.
 
 ### Memory Files
 
-| File | Purpose | Loaded at session start? |
-|------|---------|-------------------------|
-| `~/.openclaw/workspace/SOUL.md` | Agent identity + standing instructions | ✅ Always |
-| `~/.openclaw/workspace/USER.md` | User preferences and profile | ✅ Always |
-| `~/.openclaw/workspace/MEMORY.md` | Long-term persistent memory (curated) | ⚠️ Prioritized over lowercase `memory.md`; query via `memory_search()` on demand |
-| `~/.openclaw/workspace/memory/YYYY-MM-DD.md` | Daily memory logs (append-only) | ✅ Today's + yesterday's loaded |
-| `~/.openclaw/agents/<agentId>/sessions/` | Per-session conversation transcripts | ❌ Not auto-loaded; searchable if session memory enabled |
+| File                                         | Purpose                                | Loaded at session start?                                                         |
+| -------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------- |
+| `~/.openclaw/workspace/SOUL.md`              | Agent identity + standing instructions | ✅ Always                                                                        |
+| `~/.openclaw/workspace/USER.md`              | User preferences and profile           | ✅ Always                                                                        |
+| `~/.openclaw/workspace/MEMORY.md`            | Long-term persistent memory (curated)  | ⚠️ Prioritized over lowercase `memory.md`; query via `memory_search()` on demand |
+| `~/.openclaw/workspace/memory/YYYY-MM-DD.md` | Daily memory logs (append-only)        | ✅ Today's + yesterday's loaded                                                  |
+| `~/.openclaw/agents/<agentId>/sessions/`     | Per-session conversation transcripts   | ❌ Not auto-loaded; searchable if session memory enabled                         |
 
 **Bootstrap file limits:** Per-file max **20,000 characters**; aggregate cap **150,000 characters** (~50K tokens).
 
@@ -1753,10 +1760,10 @@ OpenClaw uses a **markdown-first, file-based memory system**. All memory lives a
 
 ### Memory Tools
 
-| Tool | Purpose |
-|------|---------|
+| Tool            | Purpose                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `memory_search` | Semantic recall across indexed snippets — hybrid search (BM25 + vector). Returns ~700 char snippets with file path, line range, relevance score |
-| `memory_get` | Targeted reading of specific Markdown files or line ranges. Rejects paths outside `MEMORY.md`/`memory/` |
+| `memory_get`    | Targeted reading of specific Markdown files or line ranges. Rejects paths outside `MEMORY.md`/`memory/`                                         |
 
 Both tools require `memorySearch.enabled: true` (default).
 
@@ -1764,11 +1771,11 @@ Both tools require `memorySearch.enabled: true` (default).
 
 Understanding how memory is lost helps prevent it:
 
-| Failure | What happens | Prevention |
-|---------|-------------|------------|
-| **Never Stored** | Instructions exist only in conversation, disappear on session end or compaction | Always write important info to files explicitly |
-| **Compaction Loss** | Details/nuance drop during summarization; agent works from lossy summaries | Use memory flush (see below) + explicit `/remember` commands |
-| **Pruning Trimmed** | Tool outputs cleared from context to optimize caching | Temporary — re-run tools or write summaries to memory files |
+| Failure             | What happens                                                                    | Prevention                                                   |
+| ------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Never Stored**    | Instructions exist only in conversation, disappear on session end or compaction | Always write important info to files explicitly              |
+| **Compaction Loss** | Details/nuance drop during summarization; agent works from lossy summaries      | Use memory flush (see below) + explicit `/remember` commands |
+| **Pruning Trimmed** | Tool outputs cleared from context to optimize caching                           | Temporary — re-run tools or write summaries to memory files  |
 
 ### Pre-Compaction Memory Flush
 
@@ -1778,11 +1785,11 @@ Automatically saves important context before context overflow triggers compactio
 {
   agents: {
     defaults: {
-      reserveTokensFloor: 40000,   // headroom before compaction triggers
+      reserveTokensFloor: 40000, // headroom before compaction triggers
       memoryFlush: {
         enabled: true,
         softThresholdTokens: 4000, // triggers silent agentic turn to save memories
-        systemPrompt: "Session nearing compaction. Store durable memories now."
+        systemPrompt: "Session nearing compaction. Store durable memories now.",
       },
     },
   },
@@ -1824,9 +1831,9 @@ Set explicitly: `memorySearch.provider = "local" | "openai" | "gemini" | "voyage
   agents: {
     defaults: {
       memorySearch: {
-        enabled: true,           // default
-        provider: "local",       // or "openai", "gemini", etc.
-        fallback: "openai",      // fallback if primary fails; "none" to disable
+        enabled: true, // default
+        provider: "local", // or "openai", "gemini", etc.
+        fallback: "openai", // fallback if primary fails; "none" to disable
 
         // Local embeddings
         local: {
@@ -1843,17 +1850,17 @@ Set explicitly: `memorySearch.provider = "local" | "openai" | "gemini" | "voyage
 
         // Index storage
         store: {
-          path: "~/.openclaw/memory/{agentId}.sqlite",  // supports {agentId} token
+          path: "~/.openclaw/memory/{agentId}.sqlite", // supports {agentId} token
           vector: {
-            enabled: true,      // SQLite-vec acceleration; falls back to in-process cosine
-            extensionPath: "/path/to/sqlite-vec",  // optional
+            enabled: true, // SQLite-vec acceleration; falls back to in-process cosine
+            extensionPath: "/path/to/sqlite-vec", // optional
           },
         },
 
         // Embedding cache
         cache: {
           enabled: true,
-          maxEntries: 50000,    // reduces re-embedding cost
+          maxEntries: 50000, // reduces re-embedding cost
         },
 
         // Extra paths to index (beyond MEMORY.md + memory/**/*.md)
@@ -1892,6 +1899,7 @@ memorySearch: {
 ```
 
 **Temporal decay details:**
+
 - **Never decays:** `MEMORY.md` and non-dated files in `memory/`
 - **Applies to:** Dated daily files (`memory/YYYY-MM-DD.md`) and session transcripts
 - Score = `original × e^(-λ × ageInDays)` — e.g., 7 days ago → ~84%, 30 days → 50%, 90 days → 12.5%
@@ -1944,6 +1952,7 @@ memorySearch: {
 Indexes session transcripts for cross-session search. Off by default. Debounced and async — results may be temporarily stale.
 
 Session transcript sync thresholds:
+
 ```json5
 sync: {
   sessions: {
@@ -1981,13 +1990,77 @@ memorySearch: {
 
 #### Option B — QMD Backend (Advanced)
 
-> **Source:** https://docs.openclaw.ai/reference/memory-config
+> **Source:** https://docs.openclaw.ai/reference/memory-config | https://docs.openclaw.ai/concepts/memory-qmd
+> **Upstream:** https://github.com/tobi/qmd
 
-QMD (Query-Memory-Document) enhances retrieval through hybrid search — a query like "gateway server setup" matches notes about "running the gateway on the Mac Mini" even if exact words don't appear.
+QMD is an on-device search engine for everything you need to remember — markdown notes, meeting transcripts, documentation, and knowledge bases. It combines **BM25 full-text search**, **vector semantic search** (embeddings), and **LLM re-ranking** into a hybrid retrieval pipeline. All processing runs locally via `node-llama-cpp` with GGUF models — no external API calls, full privacy, works offline.
+
+A query like "gateway server setup" matches notes about "running the gateway on the Mac Mini" even if exact words don't appear.
 
 **Best for:** Power users outgrowing default memory. Large knowledge bases, past session transcript search, multiple independent collections.
 
-**Prerequisites:** Install QMD separately (`bun install -g https://github.com/tobi/qmd`), SQLite build allowing extensions, runs via Bun + `node-llama-cpp`.
+**Prerequisites:** Install QMD separately (`npm install -g @tobilu/qmd` or `bun install -g @tobilu/qmd`), requires Bun runtime (QMD runs via Bun + `node-llama-cpp`), SQLite build supporting extensions, must be accessible on the gateway's PATH. Native support for macOS/Linux; Windows best via WSL2.
+
+**QMD search modes:**
+
+| Command | Mode | Description |
+|---------|------|-------------|
+| `qmd search` | BM25 keyword | Fast keyword-only searching |
+| `qmd vsearch` | Semantic vector | Embedding-based similarity search |
+| `qmd query` | Hybrid + rerank | Combines BM25 + vector + LLM re-ranking (highest quality) |
+| `qmd get` | Direct retrieval | Retrieve specific documents by path or ID |
+| `qmd multi-get` | Batch retrieval | Retrieve multiple docs via glob patterns |
+
+**Advanced search features:**
+
+- **Query expansion:** LLM auto-expands a single query into BM25, vector, and HyDE sub-queries for broader recall
+- **Context hierarchies:** Tree-structured metadata attached to collections improves LLM decision-making and relevance
+- **AST-based chunking:** Smart segmentation for code documents
+- **Explainability:** Detailed scoring breakdowns (`--explain` flag) for transparency
+- **Output formats:** JSON (`--json`), file list (`--files`), score thresholds (`--min-score`)
+
+**QMD standalone CLI usage:**
+
+```bash
+# Create a collection
+qmd collection add ~/notes --name notes
+
+# Add context metadata (improves search relevance)
+qmd context add qmd://notes "Personal notes about projects and ideas"
+
+# Generate embeddings (required for vsearch/query)
+qmd embed
+
+# Search
+qmd search "authentication"          # keyword search
+qmd vsearch "how auth works"         # semantic search
+qmd query "authentication setup"     # hybrid + rerank (best quality)
+```
+
+**QMD as MCP server:**
+
+QMD exposes an MCP server for AI agent integration with these tools:
+- `query` — typed sub-queries with RRF + reranking
+- `get` — document retrieval with fuzzy matching
+- `multi_get` — batch retrieval by pattern
+- `status` — index health information
+
+Deployment modes: stdio (default subprocess), HTTP (shared long-lived server), or daemon (`qmd mcp --http --daemon`).
+
+**QMD SDK/library usage:**
+
+```typescript
+import { createStore } from '@tobilu/qmd'
+
+const store = await createStore({
+  dbPath: './index.sqlite',
+  config: { collections: { docs: { path: '/docs' } } }
+})
+
+const results = await store.search({ query: "authentication" })
+```
+
+**OpenClaw integration config:**
 
 ```json5
 {
@@ -1996,16 +2069,14 @@ QMD (Query-Memory-Document) enhances retrieval through hybrid search — a query
     citations: "auto",
     qmd: {
       command: "qmd",
-      searchMode: "search",           // "search" | "vsearch" | "query"
+      searchMode: "search", // "search" | "vsearch" | "query"
       includeDefaultMemory: true,
-      paths: [
-        { name: "docs", path: "~/notes", pattern: "**/*.md" },
-      ],
+      paths: [{ name: "docs", path: "~/notes", pattern: "**/*.md" }],
       update: {
         interval: "5m",
         debounceMs: 15000,
         onBoot: true,
-        waitForBootSync: false,        // set true to block until indexed
+        waitForBootSync: false, // set true to block until indexed
         commandTimeoutMs: 30000,
         updateTimeoutMs: 120000,
         embedTimeoutMs: 300000,
@@ -2018,9 +2089,7 @@ QMD (Query-Memory-Document) enhances retrieval through hybrid search — a query
       },
       scope: {
         default: "deny",
-        rules: [
-          { action: "allow", match: { chatType: "direct" } },
-        ],
+        rules: [{ action: "allow", match: { chatType: "direct" } }],
       },
       sessions: {
         enabled: true,
@@ -2032,14 +2101,28 @@ QMD (Query-Memory-Document) enhances retrieval through hybrid search — a query
 }
 ```
 
-**Key features:**
+**Key integration features:**
+
 - Searches across entire knowledge bases, past sessions, and multiple collections
+- Results appear as `qmd/<collection>/<relative-path>` with `memory_get` supporting this prefix
 - Scope rules limit indexing (e.g., DM-only — avoid noisy group chats)
 - Automatic fallback to built-in SQLite if QMD fails or binary missing
-- First search may be slow (downloads GGUF models)
-- Self-contained XDG home at `~/.openclaw/agents/<agentId>/qmd/`
+- Self-contained XDG home at `~/.openclaw/agents/<agentId>/qmd/` — OpenClaw manages collections, updates, and embeddings automatically
+- When `memory.citations` is `auto` or `on`, results include "Source: <path#line>" footers; set to `"off"` to suppress display while retaining internal path data
+
+**Performance notes:**
+
+- First search downloads ~2GB GGUF models automatically
+- Boot refresh runs in background without blocking startup (unless `waitForBootSync: true`)
+- Increase `limits.timeoutMs` to 120000 for slower hardware
+- Pre-warm with `qmd query "test"` using matching XDG directories (see below)
+
+**Known limitations:**
+
+- Temporary monorepo checkouts should remain under hidden directories (`.tmp/`) or outside indexed roots to avoid path-length errors and indexing issues
 
 **Pre-warming models (optional):**
+
 ```bash
 STATE_DIR="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}"
 export XDG_CONFIG_HOME="$STATE_DIR/agents/main/qmd/xdg-config"
@@ -2057,6 +2140,7 @@ Cognee builds **relational knowledge graphs** from Markdown files — extracting
 **Best for:** Relationship-heavy projects where understanding connections between concepts matters (e.g., "which decisions affected which components").
 
 **Key notes:**
+
 - Runs as a separate server
 - Use distinct `datasetName` values per project to prevent entity confusion across contexts
 - Can be layered with QMD for combined recall + relational reasoning
@@ -2070,6 +2154,7 @@ Mem0 automatically extracts structured facts from conversations without manual c
 **Best for:** Users who want "set and forget" memory — no manual `/remember` commands needed.
 
 **Key notes:**
+
 - Cloud mode: API key from app.mem0.ai
 - Self-hosted: FastAPI server with ChromaDB
 - Tune `captureMode` and `autoCapture` to reduce irrelevant fact storage
@@ -2085,6 +2170,7 @@ MemSearch is OpenClaw's memory system extracted into a standalone, framework-agn
 **Best for:** Building custom agents that need OpenClaw-style memory without using OpenClaw itself. Also useful as a reference implementation.
 
 **Key features:**
+
 - SHA-256 content hashing for deduplication (unchanged content skips re-embedding)
 - Hybrid search: dense vector + BM25 with Reciprocal Rank Fusion (RRF) reranking
 - Live file watcher with configurable debounce
@@ -2103,14 +2189,14 @@ results = await mem.search("query", top_k=3)
 
 #### By Use Case
 
-| Use case | Recommended setup | Why |
-|----------|------------------|-----|
-| **Solo dev, simple agent** | Built-in SQLite + local embeddings | Zero cost, no deps, good enough recall |
-| **Solo dev, heavy knowledge base** | QMD backend | Searches across sessions, external docs, multiple collections |
-| **Team/multi-project** | QMD + Cognee | Relational graphs help track cross-project decisions |
-| **"Set and forget" memory** | Mem0 (cloud or self-hosted) | Auto-captures facts without manual curation |
-| **Custom agent framework** | MemSearch library | Standalone, framework-agnostic, same architecture |
-| **Cost-sensitive, lots of media** | Built-in + Gemini multimodal | Search images/audio without separate pipeline |
+| Use case                           | Recommended setup                  | Why                                                           |
+| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------- |
+| **Solo dev, simple agent**         | Built-in SQLite + local embeddings | Zero cost, no deps, good enough recall                        |
+| **Solo dev, heavy knowledge base** | QMD backend                        | Searches across sessions, external docs, multiple collections |
+| **Team/multi-project**             | QMD + Cognee                       | Relational graphs help track cross-project decisions          |
+| **"Set and forget" memory**        | Mem0 (cloud or self-hosted)        | Auto-captures facts without manual curation                   |
+| **Custom agent framework**         | MemSearch library                  | Standalone, framework-agnostic, same architecture             |
+| **Cost-sensitive, lots of media**  | Built-in + Gemini multimodal       | Search images/audio without separate pipeline                 |
 
 #### Optimization Best Practices
 
@@ -2463,13 +2549,13 @@ Lives in `openclaw.json` under `agents → defaults`. This is the built-in heart
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `every` | Interval (e.g. `"1h"`, `"55m"`, `"30m"`) |
-| `model` | Which model to use — use Ollama for free local heartbeats |
-| `session` | Session target: `"main"` or a session ID |
-| `target` | Channel for delivery: `"slack"`, `"telegram"`, `"whatsapp"`, etc. |
-| `prompt` | The heartbeat message sent to the agent |
+| Field     | Description                                                       |
+| --------- | ----------------------------------------------------------------- |
+| `every`   | Interval (e.g. `"1h"`, `"55m"`, `"30m"`)                          |
+| `model`   | Which model to use — use Ollama for free local heartbeats         |
+| `session` | Session target: `"main"` or a session ID                          |
+| `target`  | Channel for delivery: `"slack"`, `"telegram"`, `"whatsapp"`, etc. |
+| `prompt`  | The heartbeat message sent to the agent                           |
 
 > 💡 You can also set per-agent heartbeat inside a specific `agents.list[]` entry using the same `"heartbeat"` block.
 > 💡 Do **not** add `heartbeat` as a top-level key — OpenClaw will reject it. It belongs inside `agents → defaults`.
@@ -2551,13 +2637,13 @@ Then set `"model": "ollama/llama3.2:3b"` in the heartbeat config. Ollama runs lo
 
 ### ⚠️ Critical Config Rules
 
-| Rule | Detail |
-|------|--------|
-| `"primary"` must be a **full model path** | Use `"anthropic/claude-haiku-4-5"`, not an alias like `"haiku"`. Using an alias causes `Invalid input` on startup. |
-| Cache lives under `params`, not top-level | Correct: `"params": { "cacheRetention": "short" }` inside the model entry. Wrong: top-level cache block or `"cache": true` directly on the model. |
-| `heartbeat` belongs inside `agents → defaults` | Do **not** add `heartbeat` as a new top-level section — OpenClaw will reject it. |
-| `diagnostics` **is** a top-level section | The `diagnostics` block is a sibling of `"agents"` and `"commands"` — not nested inside agents. |
-| Invalid fields | `tier`, `role`, `cache` (bare boolean), `cache_ttl`, `fallback_chain` — remove these if present anywhere. |
+| Rule                                           | Detail                                                                                                                                            |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"primary"` must be a **full model path**      | Use `"anthropic/claude-haiku-4-5"`, not an alias like `"haiku"`. Using an alias causes `Invalid input` on startup.                                |
+| Cache lives under `params`, not top-level      | Correct: `"params": { "cacheRetention": "short" }` inside the model entry. Wrong: top-level cache block or `"cache": true` directly on the model. |
+| `heartbeat` belongs inside `agents → defaults` | Do **not** add `heartbeat` as a new top-level section — OpenClaw will reject it.                                                                  |
+| `diagnostics` **is** a top-level section       | The `diagnostics` block is a sibling of `"agents"` and `"commands"` — not nested inside agents.                                                   |
+| Invalid fields                                 | `tier`, `role`, `cache` (bare boolean), `cache_ttl`, `fallback_chain` — remove these if present anywhere.                                         |
 
 ### Config
 
@@ -2566,7 +2652,7 @@ Then set `"model": "ollama/llama3.2:3b"` in the heartbeat config. Ollama runs lo
   agents: {
     defaults: {
       model: {
-        primary: "anthropic/claude-haiku-4-5",   // full path — NOT alias
+        primary: "anthropic/claude-haiku-4-5", // full path — NOT alias
         fallbacks: [
           "openai/gpt-5-mini",
           "google/gemini-2.0-flash",
@@ -2576,22 +2662,30 @@ Then set `"model": "ollama/llama3.2:3b"` in the heartbeat config. Ollama runs lo
       imageModel: {
         primary: "openai/gpt-4o", // used when primary can't handle images
       },
-      heartbeat: { every: "55m" },   // inside defaults, NOT top-level
+      heartbeat: { every: "55m" }, // inside defaults, NOT top-level
       contextPruning: {
         mode: "cache-ttl",
-        ttl:  "1h",
+        ttl: "1h",
       },
       models: {
         // ⚠️ keys must be full provider/model paths
-        "anthropic/claude-opus-4-6":   { alias: "opus",         params: { cacheRetention: "long"  } },
-        "anthropic/claude-sonnet-4-6": { alias: "sonnet",       params: { cacheRetention: "short" } },
-        "anthropic/claude-haiku-4-5":  { alias: "haiku"         /* no cache — cheap enough */     },
-        "openai/gpt-5-mini":           { alias: "gpt-5-mini"    },
-        "openai/gpt-5.1":              { alias: "gpt-5.1"       },
-        "google/gemini-2.0-flash":     { alias: "gemini-flash"  },
-        "google/gemini-2.0-pro":       { alias: "gemini-pro"    },
-        "deepseek/deepseek-chat":      { alias: "deepseek"      },
-        "deepseek/deepseek-reasoner":  { alias: "deepseek-r1"   },
+        "anthropic/claude-opus-4-6": {
+          alias: "opus",
+          params: { cacheRetention: "long" },
+        },
+        "anthropic/claude-sonnet-4-6": {
+          alias: "sonnet",
+          params: { cacheRetention: "short" },
+        },
+        "anthropic/claude-haiku-4-5": {
+          alias: "haiku" /* no cache — cheap enough */,
+        },
+        "openai/gpt-5-mini": { alias: "gpt-5-mini" },
+        "openai/gpt-5.1": { alias: "gpt-5.1" },
+        "google/gemini-2.0-flash": { alias: "gemini-flash" },
+        "google/gemini-2.0-pro": { alias: "gemini-pro" },
+        "deepseek/deepseek-chat": { alias: "deepseek" },
+        "deepseek/deepseek-reasoner": { alias: "deepseek-r1" },
       },
     },
   },
@@ -2600,11 +2694,11 @@ Then set `"model": "ollama/llama3.2:3b"` in the heartbeat config. Ollama runs lo
 
 ### `cacheRetention` Values
 
-| Value | Meaning |
-|-------|---------|
-| `"none"` | Caching disabled — every message pays full price |
-| `"short"` | Cache held for ~5 minutes of inactivity |
-| `"long"` | Cache held for ~1 hour of inactivity |
+| Value     | Meaning                                          |
+| --------- | ------------------------------------------------ |
+| `"none"`  | Caching disabled — every message pays full price |
+| `"short"` | Cache held for ~5 minutes of inactivity          |
+| `"long"`  | Cache held for ~1 hour of inactivity             |
 
 > 💡 `cacheRetention` only works with **Anthropic models** (direct API or Amazon Bedrock). For OpenAI, Google, and DeepSeek models, the setting has no effect — just omit it.
 
@@ -2782,9 +2876,9 @@ Use when Ollama runs on a different host, or you need specific model settings:
 
 **Always use the native Ollama URL** (`http://host:11434`) — do **NOT** append `/v1`.
 
-| Mode | URL | Tool calling | Streaming |
-|------|-----|-------------|-----------|
-| **Native (correct)** | `http://host:11434` | ✅ Works | ✅ Works |
+| Mode                       | URL                    | Tool calling                                    | Streaming             |
+| -------------------------- | ---------------------- | ----------------------------------------------- | --------------------- |
+| **Native (correct)**       | `http://host:11434`    | ✅ Works                                        | ✅ Works              |
 | **OpenAI-compat (broken)** | `http://host:11434/v1` | ❌ Breaks — outputs raw tool JSON as plain text | ⚠️ May need disabling |
 
 The native `/api/chat` endpoint fully supports streaming and tool calling simultaneously. The OpenAI-compatible `/v1` mode has unreliable tool calling and may require disabling streaming.
@@ -2797,14 +2891,14 @@ The native `/api/chat` endpoint fully supports streaming and tool calling simult
 
 This is a hard constraint — models with smaller context windows will truncate conversations and lose critical context.
 
-| Model | Context | VRAM | Notes |
-|-------|---------|------|-------|
-| `glm-4.7-flash` | 128K | ~25 GB | Good general-purpose + reasoning |
-| `glm-4.7` | 128K | ~25 GB | General-purpose |
-| `qwen3-coder` | 128K | varies | Coding-optimized |
-| `gpt-oss:20b` | 128K | ~12 GB | Smaller variant |
-| `gpt-oss:120b` | 128K | ~70 GB | Large variant |
-| `llama3.2:3b` | 8K | ~2 GB | Too small for primary — **heartbeats only** |
+| Model           | Context | VRAM   | Notes                                       |
+| --------------- | ------- | ------ | ------------------------------------------- |
+| `glm-4.7-flash` | 128K    | ~25 GB | Good general-purpose + reasoning            |
+| `glm-4.7`       | 128K    | ~25 GB | General-purpose                             |
+| `qwen3-coder`   | 128K    | varies | Coding-optimized                            |
+| `gpt-oss:20b`   | 128K    | ~12 GB | Smaller variant                             |
+| `gpt-oss:120b`  | 128K    | ~70 GB | Large variant                               |
+| `llama3.2:3b`   | 8K      | ~2 GB  | Too small for primary — **heartbeats only** |
 
 Auto-discovered models use context windows reported by Ollama. For explicit configs, set both `contextWindow` and `maxTokens`.
 
@@ -2819,11 +2913,11 @@ Ollama also offers cloud-hosted models that don't require local VRAM:
 ollama signin
 ```
 
-| Model | Description |
-|-------|-------------|
-| `kimi-k2.5:cloud` | 1T parameter agentic model, multimodal reasoning with subagents |
-| `minimax-m2.7:cloud` | Fast, efficient coding and real-world productivity |
-| `glm-5:cloud` | Reasoning and code generation |
+| Model                | Description                                                     |
+| -------------------- | --------------------------------------------------------------- |
+| `kimi-k2.5:cloud`    | 1T parameter agentic model, multimodal reasoning with subagents |
+| `minimax-m2.7:cloud` | Fast, efficient coding and real-world productivity              |
+| `glm-5:cloud`        | Reasoning and code generation                                   |
 
 Select during setup:
 
@@ -3131,14 +3225,14 @@ After approving, click "Connect" again in the dashboard — it should connect su
 
 Common causes and fixes:
 
-| Rule violated | Symptom | Fix |
-|---------------|---------|-----|
-| `"primary"` set to an alias | `Invalid input` at startup | Change to full model path: `"anthropic/claude-haiku-4-5"` |
-| Cache set incorrectly | Validation error | Use `"params": { "cacheRetention": "short" }` inside the model entry — not a top-level `"cache"` block or bare `"cache": true` |
-| `heartbeat` added as top-level key | Rejected config | Move `heartbeat` inside `agents → defaults` |
-| Invalid fields present | Validation error | Remove `tier`, `role`, `cache_ttl`, `fallback_chain` — these are not valid anywhere |
-| `diagnostics` nested inside `agents` | Rejected config | Move `diagnostics` to top level (sibling of `"agents"`) |
-| Missing comma after `"defaults"` closing `}` | JSON parse error | The `"list"` block that follows `"defaults"` requires a comma after `"defaults": { ... },` |
+| Rule violated                                | Symptom                    | Fix                                                                                                                            |
+| -------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `"primary"` set to an alias                  | `Invalid input` at startup | Change to full model path: `"anthropic/claude-haiku-4-5"`                                                                      |
+| Cache set incorrectly                        | Validation error           | Use `"params": { "cacheRetention": "short" }` inside the model entry — not a top-level `"cache"` block or bare `"cache": true` |
+| `heartbeat` added as top-level key           | Rejected config            | Move `heartbeat` inside `agents → defaults`                                                                                    |
+| Invalid fields present                       | Validation error           | Remove `tier`, `role`, `cache_ttl`, `fallback_chain` — these are not valid anywhere                                            |
+| `diagnostics` nested inside `agents`         | Rejected config            | Move `diagnostics` to top level (sibling of `"agents"`)                                                                        |
+| Missing comma after `"defaults"` closing `}` | JSON parse error           | The `"list"` block that follows `"defaults"` requires a comma after `"defaults": { ... },`                                     |
 
 **API key not being picked up:** OpenClaw only reads config on startup — restart after changing API keys.
 
@@ -3164,6 +3258,7 @@ When `agents.defaults.models` is set, it becomes an allowlist. If a user (or `/m
 #### "ollama: command not found"
 
 Shell hasn't loaded the updated PATH after install:
+
 ```bash
 source ~/.bashrc && ollama --version
 # If still failing:
@@ -3173,6 +3268,7 @@ sudo reboot
 #### `ollama pull` fails or stalls
 
 Check available disk space (need at least 3 GB free):
+
 ```bash
 df -h
 ```
@@ -3180,11 +3276,13 @@ df -h
 #### Ollama service won't start
 
 View error logs:
+
 ```bash
 journalctl -u ollama -n 50
 ```
 
 If server has very low RAM, run Ollama manually instead:
+
 ```bash
 ollama serve &
 ```
@@ -3195,24 +3293,24 @@ ollama serve &
 
 ### Strategy Summary
 
-| Lever | What it does | Where to configure |
-|-------|-------------|-------------------|
-| **Model routing** | Use Haiku by default; only escalate to Sonnet for complex tasks | SOUL.md routing rules |
-| **Prompt caching** | Reuse SOUL.md/USER.md across messages at ~90% lower cost | `params.cacheRetention` on model entries |
-| **Cache warm heartbeat** | 55-minute ping prevents cache expiry, avoids rebuild cost | `agents.defaults.heartbeat.every: "55m"` |
-| **Context pruning** | Removes stale tool outputs after cache TTL window | `agents.defaults.contextPruning` |
-| **Load limits** | Only load today's memory file, not full history | SOUL.md session init block |
-| **Ollama as primary** | Run entirely on local models — $0 API cost | `model.primary: "ollama/glm-4.7-flash"` |
-| **Ollama for heartbeats** | Free local model for routine check-ins | `heartbeat.model: "ollama/llama3.2:3b"` |
-| **Ollama for cron jobs** | Free local model for scheduled tasks | `--model ollama/llama3.2:3b` on cron jobs |
-| **Hybrid: local + cloud** | Ollama primary with cloud fallback for complex tasks | `fallbacks: ["anthropic/claude-haiku-4-5"]` |
-| **Skill pruning** | Each skill adds ~97 chars to context — remove unused ones | `openclaw skills` |
-| **Light context cron jobs** | Skip workspace bootstrap for routine scheduled tasks | `--light-context` flag |
-| **OpenRouter free tier** | Free models for non-critical fallback tasks | `openclaw models scan` |
-| **LiteLLM proxy** | Cache deterministic calls, rate-limit, auto-failover | Docker sidecar between Gateway and providers |
-| **Session isolation** | Prevent history accumulation on automation tasks | `--session isolated` on cron jobs |
-| **Budget monitoring** | Track spend per session, set alert thresholds | `session_status` API + daily cron aggregation |
-| **Concurrency cap** | Smooth rate-limit exposure and cost spikes | `maxConcurrentRuns` in Gateway config |
+| Lever                       | What it does                                                    | Where to configure                            |
+| --------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| **Model routing**           | Use Haiku by default; only escalate to Sonnet for complex tasks | SOUL.md routing rules                         |
+| **Prompt caching**          | Reuse SOUL.md/USER.md across messages at ~90% lower cost        | `params.cacheRetention` on model entries      |
+| **Cache warm heartbeat**    | 55-minute ping prevents cache expiry, avoids rebuild cost       | `agents.defaults.heartbeat.every: "55m"`      |
+| **Context pruning**         | Removes stale tool outputs after cache TTL window               | `agents.defaults.contextPruning`              |
+| **Load limits**             | Only load today's memory file, not full history                 | SOUL.md session init block                    |
+| **Ollama as primary**       | Run entirely on local models — $0 API cost                      | `model.primary: "ollama/glm-4.7-flash"`       |
+| **Ollama for heartbeats**   | Free local model for routine check-ins                          | `heartbeat.model: "ollama/llama3.2:3b"`       |
+| **Ollama for cron jobs**    | Free local model for scheduled tasks                            | `--model ollama/llama3.2:3b` on cron jobs     |
+| **Hybrid: local + cloud**   | Ollama primary with cloud fallback for complex tasks            | `fallbacks: ["anthropic/claude-haiku-4-5"]`   |
+| **Skill pruning**           | Each skill adds ~97 chars to context — remove unused ones       | `openclaw skills`                             |
+| **Light context cron jobs** | Skip workspace bootstrap for routine scheduled tasks            | `--light-context` flag                        |
+| **OpenRouter free tier**    | Free models for non-critical fallback tasks                     | `openclaw models scan`                        |
+| **LiteLLM proxy**           | Cache deterministic calls, rate-limit, auto-failover            | Docker sidecar between Gateway and providers  |
+| **Session isolation**       | Prevent history accumulation on automation tasks                | `--session isolated` on cron jobs             |
+| **Budget monitoring**       | Track spend per session, set alert thresholds                   | `session_status` API + daily cron aggregation |
+| **Concurrency cap**         | Smooth rate-limit exposure and cost spikes                      | `maxConcurrentRuns` in Gateway config         |
 
 ---
 
@@ -3220,31 +3318,32 @@ ollama serve &
 
 Understanding where tokens go helps prioritize optimizations:
 
-| Driver | Impact | Notes |
-|--------|--------|-------|
-| **Model selection** | Up to **50× price difference** between budget and premium models | Biggest lever — tier ruthlessly |
-| **Session history** | Full history re-sent every turn | Long sessions compound cost; use compaction or `--session isolated` for automation |
-| **Unlimited concurrency** | Parallel agents multiply spend linearly | Cap with `maxConcurrentRuns` |
-| **Multi-agent coordination** | ~**3.5× token multiplier** vs. single-agent | Coordinators should compress task briefings; use tool allowlists to trim context |
+| Driver                       | Impact                                                           | Notes                                                                              |
+| ---------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Model selection**          | Up to **50× price difference** between budget and premium models | Biggest lever — tier ruthlessly                                                    |
+| **Session history**          | Full history re-sent every turn                                  | Long sessions compound cost; use compaction or `--session isolated` for automation |
+| **Unlimited concurrency**    | Parallel agents multiply spend linearly                          | Cap with `maxConcurrentRuns`                                                       |
+| **Multi-agent coordination** | ~**3.5× token multiplier** vs. single-agent                      | Coordinators should compress task briefings; use tool allowlists to trim context   |
 
 ### Model Tiering
 
 Route tasks to the cheapest model that can handle them:
 
-| Tier | Price range (input) | Models | Use for |
-|------|-------------------|--------|---------|
-| **Free** | $0 | Ollama (Qwen 2.5, Llama 3.2, Mistral), Google AI Studio free tier | Heartbeats, simple cron jobs, local dev |
-| **Budget** | $0.10–$0.50/M tokens | Gemini 1.5 Flash, Claude Haiku | Classification, simple tasks, routine automation |
-| **Mid** | $1–$5/M tokens | Claude Sonnet, GPT-4o Mini | Reasoning tasks, code review |
-| **Premium** | $10+/M tokens | Claude Opus, GPT-4 | Complex code generation, difficult reasoning — use sparingly |
+| Tier        | Price range (input)  | Models                                                            | Use for                                                      |
+| ----------- | -------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Free**    | $0                   | Ollama (Qwen 2.5, Llama 3.2, Mistral), Google AI Studio free tier | Heartbeats, simple cron jobs, local dev                      |
+| **Budget**  | $0.10–$0.50/M tokens | Gemini 1.5 Flash, Claude Haiku                                    | Classification, simple tasks, routine automation             |
+| **Mid**     | $1–$5/M tokens       | Claude Sonnet, GPT-4o Mini                                        | Reasoning tasks, code review                                 |
+| **Premium** | $10+/M tokens        | Claude Opus, GPT-4                                                | Complex code generation, difficult reasoning — use sparingly |
 
 Config example for tiered defaults:
+
 ```yaml
 agents:
   defaults:
     models:
-      - "google/gemini-1.5-flash-latest"    # budget default
-      - "anthropic/claude-3-5-sonnet-20241022"  # escalation
+      - "google/gemini-1.5-flash-latest" # budget default
+      - "anthropic/claude-3-5-sonnet-20241022" # escalation
 ```
 
 For cron jobs, pin to budget: `--model google/gemini-1.5-flash-latest --session isolated`
@@ -3318,12 +3417,14 @@ Enable cache trace logging to see exactly how many tokens are served from cache 
 Logs written to: `~/.openclaw/logs/cache-trace.jsonl`
 
 Each line is a JSON event. Key fields:
+
 - `cacheRead` — tokens served cheaply from cache
 - `cacheWrite` — tokens charged at full price to build/rebuild the cache
 
 **High `cacheWrite` on most turns** (not just the first) = your system prompt is changing between messages. Check that nothing modifies SOUL.md or USER.md during a session.
 
 Check cache performance per session:
+
 ```
 openclaw shell → /usage full
 ```
@@ -3341,12 +3442,12 @@ Running Ollama as your primary provider eliminates API costs entirely. All Ollam
   agents: {
     defaults: {
       model: {
-        primary: "ollama/glm-4.7-flash",       // $0 — 64K+ context, tool calling
-        fallbacks: ["ollama/qwen3-coder"],      // $0 fallback
+        primary: "ollama/glm-4.7-flash", // $0 — 64K+ context, tool calling
+        fallbacks: ["ollama/qwen3-coder"], // $0 fallback
       },
       heartbeat: {
         every: "55m",
-        model: "ollama/llama3.2:3b",            // $0 — tiny model for pings
+        model: "ollama/llama3.2:3b", // $0 — tiny model for pings
       },
     },
   },
@@ -3354,6 +3455,7 @@ Running Ollama as your primary provider eliminates API costs entirely. All Ollam
 ```
 
 **Trade-offs:**
+
 - ✅ Zero API cost, full privacy, no rate limits
 - ⚠️ Requires capable GPU (25+ GB VRAM for recommended models)
 - ⚠️ Local models are weaker at complex reasoning vs. cloud frontier models
@@ -3368,12 +3470,12 @@ Best balance of cost and capability — use local for routine tasks, escalate to
   agents: {
     defaults: {
       model: {
-        primary: "ollama/glm-4.7-flash",        // $0 for most tasks
+        primary: "ollama/glm-4.7-flash", // $0 for most tasks
         fallbacks: ["anthropic/claude-haiku-4-5"], // paid fallback for hard tasks
       },
       heartbeat: {
         every: "55m",
-        model: "ollama/llama3.2:3b",            // $0 heartbeats
+        model: "ollama/llama3.2:3b", // $0 heartbeats
       },
     },
   },
@@ -3402,12 +3504,12 @@ These models run on Ollama's infrastructure. They may have usage limits but don'
 
 #### Cost Comparison
 
-| Setup | Monthly cost (est.) | Requirements |
-|-------|-------------------|-------------|
-| **Full Ollama local** | $0 | GPU with 25+ GB VRAM |
-| **Ollama + cloud fallback** | $5–30 | GPU + API key |
-| **Ollama heartbeats only** | Saves ~$5–15/mo vs. cloud heartbeats | Any machine (3B model needs ~2 GB) |
-| **Cloud only (Haiku primary)** | $30–150 | API key only |
+| Setup                          | Monthly cost (est.)                  | Requirements                       |
+| ------------------------------ | ------------------------------------ | ---------------------------------- |
+| **Full Ollama local**          | $0                                   | GPU with 25+ GB VRAM               |
+| **Ollama + cloud fallback**    | $5–30                                | GPU + API key                      |
+| **Ollama heartbeats only**     | Saves ~$5–15/mo vs. cloud heartbeats | Any machine (3B model needs ~2 GB) |
+| **Cloud only (Haiku primary)** | $30–150                              | API key only                       |
 
 ---
 
@@ -3437,6 +3539,7 @@ Track spend and set alerts before costs surprise you:
 ### Community Cost Benchmarks
 
 Reported results from the OpenClaw community:
+
 - **80–95% cost reduction** when tiering models properly and moving automation to budget/free models
 - **Realistic minimum savings:** ~20% with basic model routing
 - **Optimization-heavy setups** (LiteLLM proxy + Ollama heartbeats + tiering + session isolation): **50%+ reduction**
