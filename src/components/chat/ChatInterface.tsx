@@ -112,8 +112,8 @@ export function ChatInterface() {
     (activeConversation?.totalCompletionTokens ?? 0);
 
   return (
-    <div className="flex h-screen">
-      <div className="flex flex-col flex-1 min-w-0">
+    <div className="flex h-dvh overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Header */}
         <header className="flex items-center gap-3 px-5 py-3 border-b border-border shrink-0">
           <span className="text-lg">🦀</span>
@@ -158,7 +158,7 @@ export function ChatInterface() {
             )}
           </div>
         </header>
-        <div className="flex h-full overflow-hidden bg-background">
+        <div className="flex flex-1 min-h-0 overflow-hidden bg-background">
           {/* Left: Chat sessions sidebar */}
           <ChatSidebar
             activeId={activeConversationId ?? ""}
@@ -168,7 +168,7 @@ export function ChatInterface() {
           />
 
           {/* Center: Chat area */}
-          <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
             {/* Messages */}
             {loaded ? (
               <MessageList

@@ -122,8 +122,14 @@
     scrollbar-width: thin;
     scrollbar-color: oklch(0.5 0 0 / 30%) transparent;
   }
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
   body {
     @apply bg-background text-foreground;
+    margin: 0;
   }
   html {
     @apply font-sans;

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ImagePlus, SendHorizonal, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 interface Attachment {
   file: File;
@@ -27,10 +27,13 @@ export function MessageInput({ input, onChange, onSubmit, isLoading }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
-    el.style.height = "auto";
+
+    // Collapse first so measuring doesn't briefly create scrollbars.
+    el.style.height = "0px";
+    el.style.overflowY = "hidden";
     const maxHeight = LINE_HEIGHT * MAX_ROWS + 16; // +16 for padding
     el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
     el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
@@ -68,7 +71,10 @@ export function MessageInput({ input, onChange, onSubmit, isLoading }: Props) {
   const handleFormSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if ((!input.trim() && attachments.length === 0) || isLoading) return;
-    onSubmit(e, attachments.map((a) => a.file));
+    onSubmit(
+      e,
+      attachments.map((a) => a.file),
+    );
     attachments.forEach((a) => URL.revokeObjectURL(a.previewUrl));
     setAttachments([]);
   };
@@ -78,7 +84,8 @@ export function MessageInput({ input, onChange, onSubmit, isLoading }: Props) {
     e.target.value = "";
   };
 
-  const canSubmit = (input.trim().length > 0 || attachments.length > 0) && !isLoading;
+  const canSubmit =
+    (input.trim().length > 0 || attachments.length > 0) && !isLoading;
 
   const handleContainerPaste = (e: React.ClipboardEvent) => {
     const imageFiles = Array.from(e.clipboardData.files).filter((f) =>
@@ -133,7 +140,7 @@ export function MessageInput({ input, onChange, onSubmit, isLoading }: Props) {
             onChange={onChange}
             onKeyDown={handleKeyDown}
             placeholder="Ask about OpenClaw setup…"
-            className="min-h-[28px] resize-none text-sm border-none shadow-none focus-visible:ring-0 flex-1 bg-transparent overflow-hidden"
+            className="min-h-[28px] resize-none text-sm border-none shadow-none focus-visible:ring-0 flex-1 bg-transparent"
             rows={1}
             disabled={isLoading}
           />
