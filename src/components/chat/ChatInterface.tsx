@@ -4,7 +4,6 @@ import { ChatSidebar } from "@/components/sidebar/ChatSidebar";
 import { ProgressSidebar } from "@/components/sidebar/ProgressSidebar";
 import { useClawChat } from "@/hooks/useClawChat";
 import {
-  clearAll,
   createConversation,
   deleteConversation,
 } from "@/lib/db/queries";
@@ -85,12 +84,6 @@ export function ChatInterface() {
     [activeConversationId],
   );
 
-  const handleResetAll = useCallback(async () => {
-    await clearAll();
-    const conv = await createConversation();
-    setSelectedId(conv.id);
-  }, []);
-
   const {
     messages,
     input,
@@ -147,15 +140,6 @@ export function ChatInterface() {
                 </optgroup>
               ))}
             </select>
-            {process.env.NODE_ENV === "development" && (
-              <Button
-                onClick={handleResetAll}
-                title="Reset current conversation (debug)"
-                variant="destructive"
-              >
-                Reset
-              </Button>
-            )}
           </div>
         </header>
         <div className="flex flex-1 min-h-0 overflow-hidden bg-background">
