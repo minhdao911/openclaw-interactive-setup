@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClawPath (OpenClaw Interactive Setup)
 
-## Getting Started
+ClawPath is an interactive setup assistant for OpenClaw, built with Next.js.
+It provides a guided chat workflow, conversation history, and
+context compaction to help users complete setup without losing important details.
 
-First, run the development server:
+## Features
+
+- Multi-provider model support (Anthropic, OpenAI, Google, DeepSeek)
+- Local conversation persistence with Dexie (IndexedDB)
+- Conversation list with titles, switching, and deletion
+- Automatic context compaction/summarization for long chats
+- Token and estimated cost tracking per conversation
+- Image attachment support in chat messages
+
+## Tech Stack
+
+- Next.js (App Router) + React + TypeScript
+- Vercel AI SDK (`ai` and provider packages)
+- Dexie + dexie-react-hooks for local data
+- Tailwind CSS
+
+## Quick Start
+
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Configure environment variables
+
+Copy the example file and fill in the keys for providers you want to use.
+
+```bash
+cp .env.local.example .env.local
+```
+
+Environment variables:
+
+- `ANTHROPIC_API_KEY`
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `DEEPSEEK_API_KEY`
+
+### 3) Run development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - start dev server
+- `npm run build` - build production bundle
+- `npm run start` - run production server
+- `npm run lint` - run ESLint
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```text
+src/
+  app/
+    api/chat/route.ts      # main streaming chat endpoint
+    api/compact/route.ts   # conversation summarization endpoint
+  components/
+    chat/                  # chat UI
+    sidebar/               # conversation + progress sidebars
+  hooks/
+    useClawChat.ts         # chat orchestration and persistence
+  lib/
+    ai/                    # model provider setup and pricing
+    db/                    # Dexie schema and queries
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Security Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Never commit `.env.local` or real API keys.
+- Use placeholder values in docs/examples only.
+- If a key is ever exposed, rotate it immediately.
 
-## Deploy on Vercel
+## Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Contributions are welcome. Please read:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
+- `SECURITY.md`
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE`.

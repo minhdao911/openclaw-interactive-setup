@@ -2003,13 +2003,13 @@ A query like "gateway server setup" matches notes about "running the gateway on 
 
 **QMD search modes:**
 
-| Command | Mode | Description |
-|---------|------|-------------|
-| `qmd search` | BM25 keyword | Fast keyword-only searching |
-| `qmd vsearch` | Semantic vector | Embedding-based similarity search |
-| `qmd query` | Hybrid + rerank | Combines BM25 + vector + LLM re-ranking (highest quality) |
-| `qmd get` | Direct retrieval | Retrieve specific documents by path or ID |
-| `qmd multi-get` | Batch retrieval | Retrieve multiple docs via glob patterns |
+| Command         | Mode             | Description                                               |
+| --------------- | ---------------- | --------------------------------------------------------- |
+| `qmd search`    | BM25 keyword     | Fast keyword-only searching                               |
+| `qmd vsearch`   | Semantic vector  | Embedding-based similarity search                         |
+| `qmd query`     | Hybrid + rerank  | Combines BM25 + vector + LLM re-ranking (highest quality) |
+| `qmd get`       | Direct retrieval | Retrieve specific documents by path or ID                 |
+| `qmd multi-get` | Batch retrieval  | Retrieve multiple docs via glob patterns                  |
 
 **Advanced search features:**
 
@@ -2040,6 +2040,7 @@ qmd query "authentication setup"     # hybrid + rerank (best quality)
 **QMD as MCP server:**
 
 QMD exposes an MCP server for AI agent integration with these tools:
+
 - `query` — typed sub-queries with RRF + reranking
 - `get` — document retrieval with fuzzy matching
 - `multi_get` — batch retrieval by pattern
@@ -2050,14 +2051,14 @@ Deployment modes: stdio (default subprocess), HTTP (shared long-lived server), o
 **QMD SDK/library usage:**
 
 ```typescript
-import { createStore } from '@tobilu/qmd'
+import { createStore } from "@tobilu/qmd";
 
 const store = await createStore({
-  dbPath: './index.sqlite',
-  config: { collections: { docs: { path: '/docs' } } }
-})
+  dbPath: "./index.sqlite",
+  config: { collections: { docs: { path: "/docs" } } },
+});
 
-const results = await store.search({ query: "authentication" })
+const results = await store.search({ query: "authentication" });
 ```
 
 **OpenClaw integration config:**
